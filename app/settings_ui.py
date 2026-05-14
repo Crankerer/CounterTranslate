@@ -118,20 +118,18 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
                            font=FONT).pack(side="left", padx=(0, 10))
 
     _MODEL_OPTIONS = [
-        # sortiert nach Preis (günstigste zuerst)
-        "gpt-4.1-nano",    # $0.10 / $0.40 per 1M
-        "gpt-4o-mini",     # $0.15 / $0.60
-        "gpt-5.4-nano",    # $0.20 / $1.25
-        "gpt-4.1-mini",    # $0.40 / $1.60
-        "gpt-5.4-mini",    # $0.75 / $4.50
-        "gpt-4.1",         # $2.00 / $8.00
-        "gpt-4o",          # $2.50 / $10.00
-        "gpt-5.4",         # $2.50 / $15.00
-        "gpt-5.5",         # $5.00 / $30.00
-        # Reasoning-Modelle
+        # sorted by cost (cheapest first)
+        "gpt-4.1-nano",
+        "gpt-4o-mini",
+        "gpt-4.1-mini",
+        "gpt-4.1",
+        "gpt-4o",
+        # reasoning models (no temperature)
         "o4-mini",
         "o3-mini",
         "o3",
+        "o1-mini",
+        "o1",
     ]
 
     def field_model(key, label):

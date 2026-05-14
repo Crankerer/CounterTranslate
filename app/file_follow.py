@@ -1,11 +1,12 @@
 import os, time
 from .util import ts
+from .i18n import t
 
-def open_follow(path: str, t):
+
+def open_follow(path: str):
     """
     Continuously attempts to open the given file until it exists.
     Once found, returns the file handle (opened for reading) and its stat info.
-    Uses translated messages via t().
     """
     printed_waiting = False
     while True:

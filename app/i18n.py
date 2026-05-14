@@ -33,6 +33,8 @@ _DEFAULTS: Dict[str, str] = {
     "hud.temp": "Temperature        : {temp}",
     "hud.no_translate": "no_translate_langs : {langs}",
     "hud.poll": "Poll interval      : {ms} ms",
+    "hud.target_lang": "Target language     : {lang}",
+    "hud.key_file": "API key file        : {path}",
     "llm.error.no_key": "[LLM-Error] No API key (OPENAI_API_KEY or config).",
     "llm.error.unauthorized": "[LLM-Error] 401 Unauthorized — API key invalid or missing.",
     "llm.error.rate_limit": "[LLM-Error] 429 Rate limit — waiting briefly.",
@@ -45,6 +47,7 @@ _DEFAULTS: Dict[str, str] = {
     "tail.terminated": "Terminated by user (Ctrl+C).",
     "tail.error": "[Error] {err}",
     "tail.config_reloaded": "[Info] Configuration reloaded.",
+    "tail.log_changed": "[Info] Log path changed — switching to: {path}",
 }
 
 class I18N:
@@ -75,3 +78,19 @@ def load_i18n(base_dir: str, lang_code: str) -> I18N:
             except Exception:
                 pass
     return I18N({})
+
+
+# --- Module-level singleton ---
+_instance: 'I18N | None' = None
+
+def configure(base_dir: str, lang_code: str) -> I18N:
+    """Call once at startup (in main.py) before any module uses t()."""
+    global _instance
+    _instance = load_i18n(base_dir, lang_code)
+    return _instance
+
+def t(key: str, **kwargs: Any) -> str:
+    """Module-level translation function. Returns key unchanged if configure() not yet called."""
+    if _instance is None:
+        return key
+    return _instance.t(key, **kwargs)

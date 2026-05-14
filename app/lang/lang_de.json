@@ -41,5 +41,6 @@
   "tail.truncation": "[Info] Logkürzung erkannt — Datei wird neu geöffnet.",
   "tail.terminated": "Vom Benutzer beendet (Strg+C).",
   "tail.error": "[Fehler] {err}",
-  "tail.config_reloaded": "[Info] Konfiguration neu geladen."
+  "tail.config_reloaded": "[Info] Konfiguration neu geladen.",
+  "tail.log_changed": "[Info] Log-Pfad geändert — wechsle zu: {path}"
 }

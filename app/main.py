@@ -7,7 +7,7 @@ from app.config import load_config, save_config, DEFAULTS
 from app.hud import TkHud
 from app.tailer import start_tail_thread
 from app.util import ts
-from app.i18n import load_i18n
+import app.i18n as _i18n_mod
 from app.updater import maybe_update
 
 # --- Laufzeitpfade: EXE vs. Script ---
@@ -86,10 +86,10 @@ def main():
     # 1) Konfiguration laden (load_config handles missing file gracefully)
     cfg = load_config(CONFIG_FILENAME)
 
-    # 2) Sprache laden
+    # 2) i18n Singleton konfigurieren — ab hier ist t() überall verfügbar
     lang_code = (cfg.get("lang") or "en").strip().lower()
-    i18n = load_i18n(BASE_DIR, lang_code)
-    t = i18n.t  # Kurzalias
+    _i18n_mod.configure(BASE_DIR, lang_code)
+    from app.i18n import t
 
     # 3) config.json erstmalig anlegen (jetzt mit echten i18n-Strings)
     ensure_config_exists(CONFIG_FILENAME, t)
@@ -225,11 +225,8 @@ def main():
     original_stdout = sys.stdout
     sys.stdout = _HudStream(original_stdout, q)
 
-    def emit_structured(dt, scope, name, msg):
-        q.put(("structured", {"dt": dt, "scope": scope, "name": name, "msg": msg}))
-
     pool = ThreadPoolExecutor(max_workers=3)
-    tail_thread = start_tail_thread(log_path, CONFIG_FILENAME, ignore_names, poll_ms, cfg, emit_structured, pool, t)
+    tail_thread = start_tail_thread(log_path, CONFIG_FILENAME, ignore_names, poll_ms, cfg, q, pool)
 
     try:
         hud.run()

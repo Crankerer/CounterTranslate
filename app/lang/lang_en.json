@@ -41,5 +41,6 @@
   "tail.truncation": "[Info] Log truncation detected — reopening.",
   "tail.terminated": "Terminated by user (Ctrl+C).",
   "tail.error": "[Error] {err}",
-  "tail.config_reloaded": "[Info] Configuration reloaded."
+  "tail.config_reloaded": "[Info] Configuration reloaded.",
+  "tail.log_changed": "[Info] Log path changed — switching to: {path}"
 }
