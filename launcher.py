@@ -14,13 +14,13 @@ def main():
             shutil.rmtree(current)
         os.rename(pending, current)
 
-    app_exe = os.path.join(current, "CS2ChatTranslationBot_app.exe")
+    app_exe = os.path.join(current, "CounterTranslate_app.exe")
     if not os.path.isfile(app_exe):
         import ctypes
         ctypes.windll.user32.MessageBoxW(
             0,
             f"App not found:\n{app_exe}\n\nPlease reinstall.",
-            "CS2 Chat Translation Bot",
+            "CounterTranslate",
             0x10,
         )
         sys.exit(1)

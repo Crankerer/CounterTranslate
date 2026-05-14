@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title Build CS2ChatTranslationBot
+title Build CounterTranslate
 
 :: === Settings ===
-set APP_NAME=CS2ChatTranslationBot
-set APP_EXE_NAME=CS2ChatTranslationBot_app
+set APP_NAME=CounterTranslate
+set APP_EXE_NAME=CounterTranslate_app
 set LAUNCHER_SCRIPT=launcher.py
 set ENTRY_POINT=app\main.py
 set LANG_SRC_DIR=app\lang
@@ -19,10 +19,10 @@ echo.
 :: --------------------------------------------------------------------------------
 :: Create build number from current date/time
 for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyddMMHHmm\""') do set BUILDNUMBER=%%A
-set CURRENT_VERSION=0.7.%BUILDNUMBER%
+set CURRENT_VERSION=0.8.%BUILDNUMBER%
 
-:: Windows file version must be exactly 4 parts each <= 65535: 0.7.YYMM.DDmm
-for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMM.ddmm\""') do set WIN_VERSION=0.7.%%A
+:: Windows file version must be exactly 4 parts each <= 65535: 0.8.YYMM.DDmm
+for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMM.ddmm\""') do set WIN_VERSION=0.8.%%A
 
 echo CURRENT_VERSION = %CURRENT_VERSION%
 echo WIN_VERSION     = %WIN_VERSION%
@@ -47,7 +47,7 @@ python -m nuitka ^
  --output-dir=%NUITKA_BUILD_DIR% ^
  --enable-plugin=tk-inter ^
  --windows-company-name="Crankerer" ^
- --windows-product-name="CS2 Chat Translation Bot" ^
+ --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
  --windows-product-version=%WIN_VERSION% ^
  %ENTRY_POINT%
@@ -72,7 +72,7 @@ python -m nuitka ^
  --output-filename=%APP_NAME%.exe ^
  --output-dir=%NUITKA_BUILD_DIR% ^
  --windows-company-name="Crankerer" ^
- --windows-product-name="CS2 Chat Translation Bot" ^
+ --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
  --windows-product-version=%WIN_VERSION% ^
  %LAUNCHER_SCRIPT%

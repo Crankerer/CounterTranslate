@@ -4,9 +4,9 @@ from urllib.request import Request, urlopen
 from app._build_version import CURRENT_VERSION
 
 OWNER = "Crankerer"
-REPO = "cs2_chat_translation_bot"
-APP_EXE_NAME = "CS2ChatTranslationBot_app.exe"
-LAUNCHER_EXE_NAME = "CS2ChatTranslationBot.exe"
+REPO = "CounterTranslate"
+APP_EXE_NAME = "CounterTranslate_app.exe"
+LAUNCHER_EXE_NAME = "CounterTranslate.exe"
 UA = f"{REPO}-updater/1.0"
 
 
@@ -19,7 +19,7 @@ class _UpdateUI:
         import tkinter as tk
         self._tk = tk
         self.root = tk.Tk()
-        self.root.title("CS2ChatTranslationBot – Updater")
+        self.root.title("CounterTranslate – Updater")
         self.root.overrideredirect(True)
         self.root.configure(bg=self.BG)
         self.root.wm_attributes("-alpha", 0.95)
@@ -31,7 +31,7 @@ class _UpdateUI:
         self.root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
         tk.Label(
-            self.root, text="CS2 Chat Translation Bot  –  Update",
+            self.root, text="CounterTranslate  –  Update",
             fg="#7adfff", bg=self.BG, font=("Consolas", 10, "bold"),
         ).pack(pady=(12, 4))
 
