@@ -96,11 +96,6 @@ copy "%LANG_SRC_DIR%\lang_*.json" "%CURRENT_DIR%\lang" >nul
 :: Write VERSION.txt into root of dist folder
 echo %CURRENT_VERSION% > "%DIST_DIR%\VERSION.txt"
 
-:: v0.8 migration shim: old updater (CS2ChatTranslationBot) looks for the old EXE name.
-:: Remove this block once v0.8 is the minimum installed version.
-copy "%CURRENT_DIR%\CounterTranslate_app.exe" "%CURRENT_DIR%\CS2ChatTranslationBot_app.exe" >nul
-echo Migration shim: copied CounterTranslate_app.exe as CS2ChatTranslationBot_app.exe
-
 :: Cleanup Nuitka temp build folder
 rmdir /s /q %NUITKA_BUILD_DIR% 2>nul
 
