@@ -202,7 +202,8 @@ def main():
                 line, self._buf = self._buf.split("\n", 1)
                 if line:
                     try:
-                        self._q.put(("line", line))
+                        is_err = line.startswith(("[LLM-Error]", "[Error]"))
+                        self._q.put(("error" if is_err else "line", line))
                     except Exception:
                         pass
 

@@ -33,6 +33,18 @@ _DEFAULTS: Dict[str, str] = {
     "hud.temp": "Temperature        : {temp}",
     "hud.no_translate": "no_translate_langs : {langs}",
     "hud.poll": "Poll interval      : {ms} ms",
+    "llm.error.no_key": "[LLM-Error] No API key (OPENAI_API_KEY or config).",
+    "llm.error.unauthorized": "[LLM-Error] 401 Unauthorized — API key invalid or missing.",
+    "llm.error.rate_limit": "[LLM-Error] 429 Rate limit — waiting briefly.",
+    "llm.error.timeout": "[LLM-Error] Timeout — LLM did not respond in time.",
+    "llm.error.exception": "[LLM-Error] {err}",
+    "tail.start": "[Info] Monitoring started.",
+    "tail.log_missing": "[Info] Log file not available. Waiting…",
+    "tail.rotation": "[Info] Log rotation detected — reopening.",
+    "tail.truncation": "[Info] Log truncation detected — reopening.",
+    "tail.terminated": "Terminated by user (Ctrl+C).",
+    "tail.error": "[Error] {err}",
+    "tail.config_reloaded": "[Info] Configuration reloaded.",
 }
 
 class I18N:

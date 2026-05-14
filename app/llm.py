@@ -3,6 +3,14 @@ import requests
 from .http_session import SESSION
 from .util import ts
 
+def _supports_temperature(model: str) -> bool:
+    m = model.lower()
+    if m.startswith("o"):        # o1, o3, o4-mini, …
+        return False
+    if m.startswith("gpt-5"):    # gpt-5, gpt-5-nano, gpt-5-mini, gpt-5-pro
+        return False
+    return True
+
 def build_system_prompt(skip_langs: list[str], target_lang: str = "German") -> str:
     skip_codes = sorted({(c or "").split('-')[0].strip().lower() for c in skip_langs if c})
     skip_list = ", ".join(skip_codes) if skip_codes else "(empty)"
@@ -30,13 +38,15 @@ def call_chatgpt(api_url: str, model: str, api_key: str, temperature: float,
 
     payload = {
         "model": model,
-        "temperature": float(temperature),
         "stream": False,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps({"name": name, "message": message}, ensure_ascii=False)}
         ]
     }
+
+    if _supports_temperature(model):
+        payload["temperature"] = float(temperature)
 
     headers = {"Authorization": f"Bearer {api_key}"}
     try:
@@ -58,6 +68,12 @@ def call_chatgpt(api_url: str, model: str, api_key: str, temperature: float,
         return content
     except requests.Timeout:
         print(ts(), t("llm.error.timeout"))
+    except requests.HTTPError as e:
+        try:
+            api_msg = e.response.json().get("error", {}).get("message", str(e))
+        except Exception:
+            api_msg = str(e)
+        print(ts(), t("llm.error.exception", err=api_msg))
     except Exception as e:
         print(ts(), t("llm.error.exception", err=e))
     return ""

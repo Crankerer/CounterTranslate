@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 
 BG = "black"
 FG_ACCENT = "#7adfff"
@@ -117,6 +117,61 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
                            activebackground=BG, activeforeground=FG_VALUE,
                            font=FONT).pack(side="left", padx=(0, 10))
 
+    _MODEL_OPTIONS = [
+        # sortiert nach Preis (günstigste zuerst)
+        "gpt-4.1-nano",    # $0.10 / $0.40 per 1M
+        "gpt-4o-mini",     # $0.15 / $0.60
+        "gpt-5.4-nano",    # $0.20 / $1.25
+        "gpt-4.1-mini",    # $0.40 / $1.60
+        "gpt-5.4-mini",    # $0.75 / $4.50
+        "gpt-4.1",         # $2.00 / $8.00
+        "gpt-4o",          # $2.50 / $10.00
+        "gpt-5.4",         # $2.50 / $15.00
+        "gpt-5.5",         # $5.00 / $30.00
+        # Reasoning-Modelle
+        "o4-mini",
+        "o3-mini",
+        "o3",
+    ]
+
+    def field_model(key, label):
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+
+        style = ttk.Style(win)
+        style.theme_use("clam")
+        style.configure("Dark.TCombobox",
+                        fieldbackground=ENTRY_BG,
+                        background=ENTRY_BG,
+                        foreground=FG_VALUE,
+                        selectbackground=ENTRY_BG,
+                        selectforeground=FG_VALUE,
+                        bordercolor="#2a2a2a",
+                        arrowcolor=FG_ACCENT,
+                        padding=3)
+        style.map("Dark.TCombobox",
+                  fieldbackground=[("readonly", ENTRY_BG)],
+                  foreground=[("readonly", FG_VALUE)],
+                  background=[("active", "#2a2a2a")])
+        win.option_add("*TCombobox*Listbox.background", ENTRY_BG)
+        win.option_add("*TCombobox*Listbox.foreground", FG_VALUE)
+        win.option_add("*TCombobox*Listbox.selectBackground", "#2a2a2a")
+        win.option_add("*TCombobox*Listbox.selectForeground", FG_ACCENT)
+        win.option_add("*TCombobox*Listbox.font", FONT)
+
+        current = cfg.get(key, _MODEL_OPTIONS[0])
+        values = list(_MODEL_OPTIONS)
+        if current not in values:
+            values.insert(0, current)
+
+        var = tk.StringVar(value=current)
+        cb = ttk.Combobox(row, textvariable=var, values=values,
+                          style="Dark.TCombobox", font=FONT, width=28)
+        cb.pack(side="left", fill="x", expand=True)
+        entries[key] = var
+
     def field_key(key, label):
         row = tk.Frame(body, bg=BG)
         row.pack(fill="x", pady=(4, 0))
@@ -148,7 +203,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
 
     section("LLM / API")
     field("gpt_api",   "API URL", width=44)
-    field("gpt_model", "Model", width=30)
+    field_model("gpt_model", "Model")
     field("temperature", "Temperature  (0.0 – 2.0)", width=10)
     field_key("open_ai_api_key", "API key")
     field("open_ai_api_key_file", "API key file",
