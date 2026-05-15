@@ -87,14 +87,6 @@ Beim **ersten Start** fragt CounterTranslate automatisch nach:
 
 Das Overlay ist klickdurchlässig und stört das Spielen nicht.
 
-**Tastenkürzel:**
-
-| Taste | Funktion |
-|-------|----------|
-| `Escape` | Overlay schließen |
-| `F1` | Overlay ein-/ausblenden |
-| `F2` | Transparenz wechseln (60 % → 75 % → 90 %) |
-
 ---
 
 ## Einstellungen
