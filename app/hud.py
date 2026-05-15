@@ -206,71 +206,17 @@ class TkHud:
     # ── streaming ────────────────────────────────────────────────────────────
 
     def _stream_init(self, id: str, dt: str, scope: str, name: str, orig: str = ""):
-        self.text.configure(state="normal")
-        mark = f"stream_{id}"
-        # Place mark at the very start of the new line — before the header.
-        # LEFT gravity: mark never moves regardless of subsequent inserts on this line.
-        self.text.mark_set(mark, "end")
-        self.text.mark_gravity(mark, "left")
-        self.text.insert("end", dt + "  ", ("dt",))
-        self.text.insert("end", f"[{scope}] ", ("scope",))
-        self.text.insert("end", name + ": ⟳\n", ("meta",))
-        self._stream_marks[id] = mark
-        self._line_count += 1
-        self._trim_if_needed()
-        self.text.see("end")
-        self.text.configure(state="disabled")
+        pass  # no placeholder shown; result appears on stream_done
 
     def _stream_update(self, id: str, delta: str):
-        pass  # no live chunk display; _stream_done replaces ⟳ on completion
+        pass
 
     def _stream_done(self, id: str, dt: str, scope: str, name: str,
                      orig: str, lang: str, msg: str):
-        mark = self._stream_marks.get(id)
-        if not mark:
-            return
-        self.text.configure(state="normal")
-        # mark is guaranteed to be at the LINE START (set before the header insert).
-        # Use it directly — no linestart modifier needed.
-        line_start = self.text.index(mark)
-        line_end   = self.text.index(f"{mark} lineend +1c")
-        self.text.delete(line_start, line_end)
-        self._line_count -= 1
-        self.text.mark_unset(mark)
-        del self._stream_marks[id]
-        # Re-insert using a right-gravity temp mark so sequential inserts advance.
-        tmp = f"_ins_{id}"
-        self.text.mark_set(tmp, line_start)
-        self.text.mark_gravity(tmp, "right")
-        self.text.insert(tmp, dt + "  ", ("dt",))
-        self.text.insert(tmp, f"[{scope}] ", ("scope",))
-        self.text.insert(tmp, name + ": ", ("name",))
-        self.text.insert(tmp, msg + "\n", ("msg",))
-        self._line_count += 1
-        self._trim_if_needed()
-        if orig:
-            self.text.insert(tmp, "  ↳ ", ("meta",))
-            if lang:
-                self.text.insert(tmp, f"[{lang}] ", ("lang",))
-            self.text.insert(tmp, orig + "\n", ("meta",))
-            self._line_count += 1
-            self._trim_if_needed()
-        self.text.mark_unset(tmp)
-        self.text.see("end")
-        self.text.configure(state="disabled")
+        self._append_struct(dt=dt, scope=scope, name=name, msg=msg, orig=orig, lang=lang)
 
     def _stream_remove(self, id: str):
-        mark = self._stream_marks.get(id)
-        if not mark:
-            return
-        self.text.configure(state="normal")
-        line_start = self.text.index(mark)
-        line_end   = self.text.index(f"{mark} lineend +1c")
-        self.text.delete(line_start, line_end)
-        self._line_count = max(0, self._line_count - 1)
-        self.text.mark_unset(mark)
-        del self._stream_marks[id]
-        self.text.configure(state="disabled")
+        pass  # nothing was inserted, nothing to remove
 
     def run(self):
         self.root.mainloop()

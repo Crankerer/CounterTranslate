@@ -14,7 +14,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 SRC = os.path.join(os.path.dirname(__file__), "console.log")
 DST = os.path.join(os.path.dirname(__file__), "live.log")
 
-CHAT_DELAY = 1.5   # pause after each chat line (seconds)
+CHAT_DELAY = 0.15   # pause after each chat line (seconds)
 LINE_DELAY = 0.005 # pause after each non-chat line (seconds)
 
 CHAT_RE = re.compile(r"^\d{2}/\d{2} \d{2}:\d{2}:\d{2}  \[(ALLE|ALL|CT|AT|T)\]")
