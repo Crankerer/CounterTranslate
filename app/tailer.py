@@ -5,6 +5,7 @@ from .parser import iter_chat_entries
 from .file_follow import open_follow
 from .llm import build_system_prompt, call_chatgpt_stream
 from .i18n import t
+from . import log_setup as _log_setup
 
 _LANG_PREFIX_RE = re.compile(r'^\[([a-z]{2,3})\]\s*', re.IGNORECASE)
 
@@ -94,6 +95,9 @@ def start_tail_thread(
                             continue
 
                         stream_id = str(time.monotonic_ns())[-12:]
+                        _log_setup.get().debug(
+                            f"[chat] [{scope}] {name}: {orig_msg}"
+                        )
                         queue.put(("stream_init", {
                             "id": stream_id, "dt": dt, "scope": scope,
                             "name": name, "orig": orig_msg,
@@ -124,6 +128,9 @@ def start_tail_thread(
                             if full_text:
                                 lang, msg_clean = _parse_lang_prefix(full_text)
                                 if msg_clean:
+                                    _log_setup.get().debug(
+                                        f"[llm_response] [{lang}] {name} → {msg_clean}"
+                                    )
                                     queue.put(("stream_done", {
                                         "id": sid, "dt": dt, "scope": scope,
                                         "name": name, "orig": orig,

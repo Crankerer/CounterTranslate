@@ -4,6 +4,7 @@ import requests
 from .http_session import SESSION
 from .i18n import t
 from .util import ts
+from . import log_setup as _log_setup
 
 _NO_TEMP_MODELS = frozenset({"o1", "o1-mini", "o1-preview", "o3", "o3-mini", "o4-mini"})
 _O_SERIES_RE = re.compile(r'^o\d', re.IGNORECASE)
@@ -44,6 +45,10 @@ def call_chatgpt_stream(
     if not api_key:
         print(ts(), t("llm.error.no_key"))
         return
+
+    _log_setup.get().debug(
+        f"[llm_request] api={api_url} model={model} name={name} msg={message[:120]}"
+    )
 
     payload = {
         "model": model,

@@ -9,6 +9,7 @@ from app.tailer import start_tail_thread
 from app.util import ts
 import app.i18n as _i18n_mod
 from app.updater import maybe_update
+import app.log_setup as _log_setup
 
 # --- Laufzeitpfade: EXE vs. Script ---
 # sys.frozen = PyInstaller; __compiled__ = Nuitka
@@ -83,6 +84,9 @@ def request_api_key(t) -> str:
         root.destroy()
 
 def main():
+    _log = _log_setup.setup(CONFIG_DIR)
+    _log.info("=== CounterTranslate startup ===")
+
     # 1) Konfiguration laden (load_config handles missing file gracefully)
     cfg = load_config(CONFIG_FILENAME)
 
@@ -158,6 +162,11 @@ def main():
     if key_file:
         print(t("hud.key_file", path=key_file))
     print()
+    _log.info(
+        f"config: log={log_path} | model={cfg.get('gpt_model')} "
+        f"| api={cfg.get('gpt_api')} | target_lang={cfg.get('target_lang')} "
+        f"| no_translate={cfg.get('no_translate_langs')} | temp={cfg.get('temperature')}"
+    )
 
     # HUD + Tail starten
     from app.hud import TkHud
@@ -209,6 +218,15 @@ def main():
             while "\n" in self._buf:
                 line, self._buf = self._buf.split("\n", 1)
                 if line:
+                    try:
+                        is_err = line.startswith(("[LLM-Error]", "[Error]"))
+                        log = _log_setup.get()
+                        if is_err:
+                            log.error(line)
+                        else:
+                            log.info(line)
+                    except Exception:
+                        pass
                     try:
                         is_err = line.startswith(("[LLM-Error]", "[Error]"))
                         self._q.put(("error" if is_err else "line", line))
