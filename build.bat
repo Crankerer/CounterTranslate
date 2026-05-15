@@ -18,7 +18,7 @@ echo.
 
 :: --------------------------------------------------------------------------------
 :: Create build number from current date/time
-for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyddMMHHmm\""') do set BUILDNUMBER=%%A
+for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMMddHHmm\""') do set BUILDNUMBER=%%A
 set CURRENT_VERSION=0.9.%BUILDNUMBER%
 
 :: Windows file version must be exactly 4 parts each <= 65535: 0.9.YYMM.DDmm
