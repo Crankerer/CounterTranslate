@@ -70,6 +70,12 @@ class TkHud:
         settings_btn.bind("<Leave>", lambda e: settings_btn.config(fg="#7adfff"))
         settings_btn.bind("<Button-1>", lambda e: self.on_settings() if self.on_settings else None)
 
+        # Resize handle must be packed before the expanding text widget so it
+        # actually gets allocated space at the bottom-right corner.
+        resize_handle = tk.Frame(frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
+        resize_handle.pack(side="bottom", anchor="se")
+        resize_handle.pack_propagate(False)
+
         self.text = tk.Text(
             frame,
             bg="black", fg=self.COLORS["meta"],
@@ -86,11 +92,6 @@ class TkHud:
         self.text.bind("<MouseWheel>", self._on_mousewheel)
         self.text.bind("<Button-4>", lambda e: self.text.yview_scroll(-1, "units"))
         self.text.bind("<Button-5>", lambda e: self.text.yview_scroll(1, "units"))
-
-        # Resize handle — bottom-right corner
-        resize_handle = tk.Frame(frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
-        resize_handle.pack(side="bottom", anchor="se")
-        resize_handle.pack_propagate(False)
         resize_handle.bind("<Button-1>", self._resize_start)
         resize_handle.bind("<B1-Motion>", self._resize_move)
         resize_handle.bind("<ButtonRelease-1>", self._resize_end)
