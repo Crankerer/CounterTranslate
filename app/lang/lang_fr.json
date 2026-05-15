@@ -42,5 +42,25 @@
   "tail.terminated": "Terminé par l'utilisateur (Ctrl+C).",
   "tail.error": "[Erreur] {err}",
   "tail.config_reloaded": "[Info] Configuration rechargée.",
-  "tail.log_changed": "[Info] Chemin du journal modifié — passage à : {path}"
+  "tail.log_changed": "[Info] Chemin du journal modifié — passage à : {path}",
+
+  "settings.title": "⛭  Paramètres",
+  "settings.section.interface": "Interface",
+  "settings.section.llm": "LLM / API",
+  "settings.section.log": "Journal & Performance",
+  "settings.field.ui_lang": "Langue de l'interface",
+  "settings.field.target_lang": "Traduire en",
+  "settings.field.skip_langs": "Langues à ignorer (virgule)",
+  "settings.field.ignore_players": "Joueurs ignorés (virgule)",
+  "settings.field.api_url": "URL de l'API",
+  "settings.field.model": "Modèle",
+  "settings.field.temperature": "Température  (0.0 – 2.0)",
+  "settings.field.api_key": "Clé API",
+  "settings.field.api_key_file": "Fichier clé API",
+  "settings.field.log_path": "Chemin console.log",
+  "settings.field.poll_interval": "Intervalle (ms)",
+  "settings.model.fixed": "(fixe)",
+  "settings.btn.save": "Enregistrer",
+  "settings.btn.cancel": "Annuler",
+  "settings.key.show": "afficher"
 }

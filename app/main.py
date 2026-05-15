@@ -23,9 +23,13 @@ if getattr(sys, 'frozen', False) or _is_compiled:
     BASE_DIR = os.path.dirname(sys.executable)
     # config.json lives one level up in the install root (survives updates)
     CONFIG_DIR = os.path.dirname(BASE_DIR)
+    # In compiled builds, lang/ is next to the EXE (inside BASE_DIR)
+    I18N_DIR = BASE_DIR
 else:
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     CONFIG_DIR = BASE_DIR
+    # In dev mode, lang/ lives inside the app/ package directory
+    I18N_DIR = os.path.dirname(os.path.abspath(__file__))
 
 if getattr(sys, 'frozen', False) or _is_compiled:
     sys.path.insert(0, BASE_DIR)
@@ -92,7 +96,7 @@ def main():
 
     # 2) i18n Singleton konfigurieren — ab hier ist t() überall verfügbar
     lang_code = (cfg.get("lang") or "en").strip().lower()
-    _i18n_mod.configure(BASE_DIR, lang_code)
+    _i18n_mod.configure(I18N_DIR, lang_code)
     from app.i18n import t
 
     # 3) config.json erstmalig anlegen (jetzt mit echten i18n-Strings)
@@ -192,7 +196,7 @@ def main():
                 print(t("cfg.log_saved", path=CONFIG_FILENAME, log=cfg.get("log_path", "")))
             except Exception as e:
                 print(t("cfg.save_fail", err=e))
-        open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save)
+        open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR)
 
     hud = TkHud(
         q, alpha=0.72, font="Consolas 11",

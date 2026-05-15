@@ -42,5 +42,25 @@
   "tail.terminated": "Vom Benutzer beendet (Strg+C).",
   "tail.error": "[Fehler] {err}",
   "tail.config_reloaded": "[Info] Konfiguration neu geladen.",
-  "tail.log_changed": "[Info] Log-Pfad geändert — wechsle zu: {path}"
+  "tail.log_changed": "[Info] Log-Pfad geändert — wechsle zu: {path}",
+
+  "settings.title": "⛭  Einstellungen",
+  "settings.section.interface": "Oberfläche",
+  "settings.section.llm": "LLM / API",
+  "settings.section.log": "Log & Leistung",
+  "settings.field.ui_lang": "Sprache",
+  "settings.field.target_lang": "Übersetzen in",
+  "settings.field.skip_langs": "Sprachen überspringen (Komma)",
+  "settings.field.ignore_players": "Spieler ignorieren (Komma)",
+  "settings.field.api_url": "API URL",
+  "settings.field.model": "Modell",
+  "settings.field.temperature": "Temperatur  (0.0 – 2.0)",
+  "settings.field.api_key": "API-Schlüssel",
+  "settings.field.api_key_file": "API-Schlüssel-Datei",
+  "settings.field.log_path": "Pfad zur console.log",
+  "settings.field.poll_interval": "Abfrageintervall (ms)",
+  "settings.model.fixed": "(fest)",
+  "settings.btn.save": "Speichern",
+  "settings.btn.cancel": "Abbrechen",
+  "settings.key.show": "zeigen"
 }

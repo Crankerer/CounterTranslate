@@ -42,5 +42,25 @@
   "tail.terminated": "Завершено пользователем (Ctrl+C).",
   "tail.error": "[Ошибка] {err}",
   "tail.config_reloaded": "[Инфо] Конфигурация перезагружена.",
-  "tail.log_changed": "[Инфо] Путь к журналу изменён — переключение на: {path}"
+  "tail.log_changed": "[Инфо] Путь к журналу изменён — переключение на: {path}",
+
+  "settings.title": "⛭  Настройки",
+  "settings.section.interface": "Интерфейс",
+  "settings.section.llm": "LLM / API",
+  "settings.section.log": "Журнал и производительность",
+  "settings.field.ui_lang": "Язык интерфейса",
+  "settings.field.target_lang": "Переводить на",
+  "settings.field.skip_langs": "Игнорировать языки (через запятую)",
+  "settings.field.ignore_players": "Игнорировать игроков (через запятую)",
+  "settings.field.api_url": "URL API",
+  "settings.field.model": "Модель",
+  "settings.field.temperature": "Температура  (0.0 – 2.0)",
+  "settings.field.api_key": "Ключ API",
+  "settings.field.api_key_file": "Файл ключа API",
+  "settings.field.log_path": "Путь к console.log",
+  "settings.field.poll_interval": "Интервал опроса (мс)",
+  "settings.model.fixed": "(фиксирован)",
+  "settings.btn.save": "Сохранить",
+  "settings.btn.cancel": "Отмена",
+  "settings.key.show": "показать"
 }
