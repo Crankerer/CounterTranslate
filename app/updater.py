@@ -274,7 +274,11 @@ def maybe_update(prereleases=False):
 
         print(f"[Updater] Pending update staged at: {update_pending}")
         print(f"[Updater] Relaunching via launcher: {launcher_exe}")
-        subprocess.Popen([launcher_exe] + sys.argv[1:], close_fds=True)
+        subprocess.Popen(
+            [launcher_exe] + sys.argv[1:],
+            close_fds=True,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+        )
         sys.exit(0)
 
     except Exception as e:

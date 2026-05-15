@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import subprocess
+import time
 
 
 def main():
@@ -10,9 +11,21 @@ def main():
     current = os.path.join(base, "current")
 
     if os.path.isdir(pending):
-        if os.path.isdir(current):
-            shutil.rmtree(current)
-        os.rename(pending, current)
+        # Wait for the old app process to fully exit and release file handles
+        time.sleep(2)
+        try:
+            if os.path.isdir(current):
+                shutil.rmtree(current)
+            os.rename(pending, current)
+        except Exception as e:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(
+                0,
+                f"Update failed:\n{e}\n\nPlease reinstall.",
+                "CounterTranslate – Update Error",
+                0x10,
+            )
+            sys.exit(1)
 
         # Remove legacy files/folders from the old project name after a successful update
         for entry in os.listdir(base):
