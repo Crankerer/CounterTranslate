@@ -33,12 +33,13 @@ console.log  →  file_follow.py  →  tailer.py  →  llm.py  →  hud.py
 
 **Key modules:**
 
-- `app/main.py` — Entry point. Handles config bootstrapping (API key dialog, log path picker), wires up the `Queue` between `tailer` and `hud`, and launches both. Installs `_HudStream` that tees `sys.stdout` into the HUD queue so `print()` calls appear as overlay lines; lines starting with `[LLM-Error]` or `[Error]` are styled as errors.
-- `app/tailer.py` — Background daemon thread. Reads chunks from `file_follow`, calls `iter_chat_entries`, submits each message to the `ThreadPoolExecutor` (3 workers). Each worker streams via `call_chatgpt_stream` and pushes queue messages directly (see HUD Queue Protocol below). Also hot-reloads `config.json` every 5 seconds; if `log_path` changes, reopens the file.
-- `app/llm.py` — LLM I/O. `call_chatgpt_stream` is a generator that yields raw SSE text chunks; `call_chatgpt` wraps it for non-streaming use. `build_system_prompt` constructs the system prompt from `no_translate_langs` and `target_lang`. Reasoning/o-series models (`_NO_TEMP_MODELS`, matched by `_supports_temperature`) do not receive a `temperature` field.
+- `app/main.py` — Entry point. Handles config bootstrapping (API key dialog, log path picker), wires up the `Queue` between `tailer` and `hud`, and launches both. Installs `_HudStream` that tees `sys.stdout` into the HUD queue so `print()` calls appear as overlay lines; lines starting with `[LLM-Error]` or `[Error]` are styled as errors. Also writes every line to the file logger (`log_setup`).
+- `app/tailer.py` — Background daemon thread. Reads chunks from `file_follow`, calls `iter_chat_entries`, submits each message to the `ThreadPoolExecutor` (3 workers). Each worker streams via `call_chatgpt_stream` and pushes queue messages directly (see HUD Queue Protocol below). Also hot-reloads `config.json` every 5 seconds; if `log_path` changes, reopens the file. Logs each detected chat entry and each LLM response via `log_setup`.
+- `app/llm.py` — LLM I/O. `call_chatgpt_stream` is a generator that yields raw SSE text chunks; `call_chatgpt` wraps it for non-streaming use. `build_system_prompt` constructs the system prompt from `no_translate_langs` and `target_lang`. Reasoning/o-series models (`_NO_TEMP_MODELS`, matched by `_supports_temperature`) do not receive a `temperature` field. Logs each outgoing request via `log_setup`.
+- `app/log_setup.py` — File logging singleton. `setup(log_dir)` creates/overwrites `countertranslate.log` in `log_dir` on every startup (mode `'w'`). `get()` returns the `logging.Logger` named `"ct"`. Import `log_setup` and call `get()` from any module that needs to log.
 - `app/parser.py` — Regex (`CHAT_ENTRY_RE`) that matches CS2 chat lines with scopes `ALLE`, `ALL`, `T`, `AT`, or `CT`.
 - `app/file_follow.py` — Tail implementation that handles log rotation and truncation by reopening the file.
-- `app/hud.py` — Transparent, always-on-top Tkinter window that reads from a `Queue` at ~30 fps and renders chat lines. Supports streaming updates via Tkinter text marks.
+- `app/hud.py` — Transparent, always-on-top Tkinter window that reads from a `Queue` at ~30 fps and renders chat lines. `stream_init` and `stream_update` are no-ops; the completed translation appears on `stream_done` via `_append_struct`.
 - `app/settings_ui.py` — `open_settings(parent_root, cfg, config_path, on_save)` opens a borderless Tkinter `Toplevel` settings dialog. Contains a hardcoded `_MODEL_OPTIONS` list. Saves back via the `on_save` callback; does not write `config.json` itself.
 - `app/config.py` — `load_config` / `save_config` around `config.json`. Merges `DEFAULTS` for backward compatibility. Supports an `open_ai_api_key_file` pointer as an alternative to embedding the key.
 - `app/http_session.py` — Module-level `SESSION`: a shared `requests.Session` with retry/backoff (4 retries, exponential backoff, retries on 429/5xx). Import and reuse this instead of creating new sessions.
@@ -65,12 +66,12 @@ console.log  →  file_follow.py  →  tailer.py  →  llm.py  →  hud.py
 | `"line"` | `str` | Plain info/status line |
 | `"error"` | `str` | Error line (rendered red) |
 | `"structured"` | `dt, scope, name, msg, orig, lang` | Completed non-streamed message |
-| `"stream_init"` | `id, dt, scope, name, orig` | Insert placeholder `⟳` line; set Tkinter mark |
-| `"stream_update"` | `id, delta` | Append chunk to streaming line |
-| `"stream_done"` | `id, dt, scope, name, orig, lang, msg` | Finalize line with `[lang] msg` |
-| `"stream_remove"` | `id` | Remove placeholder (LLM returned empty) |
+| `"stream_init"` | `id, dt, scope, name, orig` | No-op in HUD (no placeholder shown) |
+| `"stream_update"` | `id, delta` | No-op in HUD |
+| `"stream_done"` | `id, dt, scope, name, orig, lang, msg` | Appends completed line via `_append_struct` |
+| `"stream_remove"` | `id` | No-op in HUD (LLM returned empty) |
 
-Stream IDs are 12-digit monotonic-ns suffixes. Tkinter marks (`stream_<id>`) track insert positions within the `Text` widget.
+Stream IDs are 12-digit monotonic-ns suffixes.
 
 ## config.json Keys
 
@@ -100,6 +101,18 @@ Config is hot-reloaded by `tailer.py` every 5 seconds while running; changes to 
 ## No Test Suite
 
 There are no automated tests. Verify behavior by running the app against a real or simulated `console.log`.
+
+## Logging
+
+`countertranslate.log` is written to `CONFIG_DIR` (project root in dev, install root in compiled build). It is overwritten on every startup. Use `log_setup.get()` to obtain the logger from any module — do not create new loggers.
+
+| Level | What is logged |
+|-------|---------------|
+| `INFO` | Startup config summary, all `print()` output (via `_HudStream`) |
+| `DEBUG` | `[chat]` every detected CS2 message, `[llm_request]` outgoing API call, `[llm_response]` translated result |
+| `ERROR` | Lines starting with `[LLM-Error]` or `[Error]` |
+
+The log file is excluded from git via the existing `*.log` rule in `.gitignore`.
 
 ## Internationalization
 
