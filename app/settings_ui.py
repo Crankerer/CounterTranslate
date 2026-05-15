@@ -74,7 +74,11 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         snap = dict(cfg)
         for k, w in entries.items():
             if isinstance(w, tk.StringVar):
-                snap[k] = w.get()
+                val = w.get()
+                if k in ("no_translate_langs", "ignore_names"):
+                    snap[k] = [x.strip() for x in val.split(",") if x.strip()]
+                else:
+                    snap[k] = val
             else:
                 raw = w.get().strip()
                 if k in ("no_translate_langs", "ignore_names"):
@@ -148,6 +152,14 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         "Russian", "Chinese", "Turkish", "Polish", "Italian",
     ]
 
+    _SKIP_LANG_OPTIONS = [
+        ("de", "Deutsch"), ("en", "English"), ("fr", "Français"),
+        ("es", "Español"), ("pt", "Português"), ("ru", "Русский"),
+        ("zh", "中文"), ("tr", "Türkçe"), ("pl", "Polski"),
+        ("it", "Italiano"), ("cs", "Čeština"), ("nl", "Nederlands"),
+        ("uk", "Українська"), ("ko", "한국어"), ("ja", "日本語"),
+    ]
+
     _OPENAI_API_URL    = "https://api.openai.com/v1/chat/completions"
     _OPENAI_FIXED_MODEL = "gpt-4.1-nano"
 
@@ -204,12 +216,70 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                        bg=BG, fg=FG_LABEL, selectcolor="#1a1a1a",
                        activebackground=BG, font=FONT_SMALL).pack(side="left", padx=(6, 0))
 
+    def field_multicheck(key, label):
+        current = cfg.get(key, [])
+        if isinstance(current, str):
+            current = [x.strip() for x in current.split(",") if x.strip()]
+        selected = set(current)
+        var = tk.StringVar(value=", ".join(sorted(selected)))
+        entries[key] = var
+
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+        display = tk.Label(row, textvariable=var, fg=FG_VALUE, bg=ENTRY_BG,
+                           font=FONT, anchor="w", padx=6, width=22)
+        display.pack(side="left", fill="x", expand=True)
+        arrow = tk.Label(row, text="▾", fg=FG_ACCENT, bg=ENTRY_BG,
+                         font=FONT_BOLD, cursor="hand2", padx=6)
+        arrow.pack(side="left")
+
+        def _open_popup(event=None):
+            popup = tk.Toplevel(win)
+            popup.overrideredirect(True)
+            popup.configure(bg="#1a1a1a")
+            popup.attributes("-topmost", True)
+            popup.grab_set()
+            x = row.winfo_rootx() + 34 * 7  # align with entry area
+            y = row.winfo_rooty() + row.winfo_height()
+            popup.geometry(f"+{x}+{y}")
+
+            check_vars = {}
+            for code, name in _SKIP_LANG_OPTIONS:
+                cv = tk.BooleanVar(value=code in selected)
+                check_vars[code] = cv
+                tk.Checkbutton(popup, text=f"{name}  [{code}]", variable=cv,
+                               bg="#1a1a1a", fg=FG_VALUE, selectcolor="#2a2a2a",
+                               activebackground="#2a2a2a", activeforeground=FG_VALUE,
+                               font=FONT, anchor="w").pack(fill="x", padx=10, pady=1)
+
+            def _apply():
+                new_sel = sorted(c for c, cv in check_vars.items() if cv.get())
+                selected.clear()
+                selected.update(new_sel)
+                var.set(", ".join(new_sel))
+                popup.grab_release()
+                popup.destroy()
+
+            tk.Frame(popup, bg="#2a2a2a", height=1).pack(fill="x", pady=(4, 0))
+            ok = tk.Label(popup, text="OK", fg=FG_VALUE, bg="#1e1e1e",
+                          font=FONT_BOLD, cursor="hand2", padx=16, pady=4)
+            ok.pack(pady=4)
+            ok.bind("<Button-1>", lambda e: _apply())
+            ok.bind("<Enter>", lambda e: ok.config(bg="#2a2a2a"))
+            ok.bind("<Leave>", lambda e: ok.config(bg="#1e1e1e"))
+            popup.bind("<Escape>", lambda e: _apply())
+
+        display.bind("<Button-1>", _open_popup)
+        arrow.bind("<Button-1>", _open_popup)
+
     # ── sections & fields ─────────────────────────────────────────────────────
 
     section(t("settings.section.interface"))
     field_lang("lang",            t("settings.field.ui_lang"))
     field_target_lang("target_lang", t("settings.field.target_lang"))
-    field("no_translate_langs",   t("settings.field.skip_langs"),      width=30)
+    field_multicheck("no_translate_langs", t("settings.field.skip_langs"))
     field("ignore_names",         t("settings.field.ignore_players"),   width=40)
 
     section(t("settings.section.llm"))
@@ -284,7 +354,11 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         new_cfg = dict(cfg)
         for key, widget in entries.items():
             if isinstance(widget, tk.StringVar):
-                new_cfg[key] = widget.get()
+                val = widget.get()
+                if key in ("no_translate_langs", "ignore_names"):
+                    new_cfg[key] = [x.strip() for x in val.split(",") if x.strip()]
+                else:
+                    new_cfg[key] = val
             else:
                 raw = widget.get().strip()
                 if key in ("no_translate_langs", "ignore_names"):
