@@ -111,7 +111,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
                  font=FONT_SMALL, anchor="w", width=34).pack(side="left")
         var = tk.StringVar(value=cfg.get(key, "en"))
         entries[key] = var
-        for code, lbl in [("en", "English"), ("de", "Deutsch")]:
+        for code, lbl in [("en", "English"), ("de", "Deutsch"), ("fr", "Français"), ("pl", "Polski"), ("ru", "Русский")]:
             tk.Radiobutton(row, text=lbl, variable=var, value=code,
                            bg=BG, fg=FG_VALUE, selectcolor="#1a1a1a",
                            activebackground=BG, activeforeground=FG_VALUE,
