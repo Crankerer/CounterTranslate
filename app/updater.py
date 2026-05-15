@@ -127,14 +127,17 @@ def _extract_update_from_zip(zip_path):
         members = z.namelist()
         exes = [m for m in members if m.lower().endswith(".exe")]
         if not exes:
-            return None, None
+            return None, None, None
 
         app_name_lower = APP_EXE_NAME.lower()
         named = [m for m in exes if os.path.basename(m).lower() == app_name_lower]
         if not named:
             print(f"[Updater] {APP_EXE_NAME} not found in ZIP. Found: {[os.path.basename(m) for m in exes]}")
-            return None, None
+            return None, None, None
         pick = named[0]
+
+        launcher_name_lower = LAUNCHER_EXE_NAME.lower()
+        launcher_members = [m for m in exes if os.path.basename(m).lower() == launcher_name_lower]
 
         out_dir = tempfile.mkdtemp()
         z.extractall(out_dir)
@@ -146,7 +149,17 @@ def _extract_update_from_zip(zip_path):
         print(f"[Updater] full path {new_exe}")
 
         update_root = os.path.dirname(new_exe)
-        return update_root, new_exe
+
+        new_launcher = (
+            os.path.normpath(os.path.join(out_dir, launcher_members[0]))
+            if launcher_members else None
+        )
+        if new_launcher:
+            print(f"[Updater] Launcher found in ZIP: {launcher_members[0]}")
+        else:
+            print(f"[Updater] Launcher not found in ZIP.")
+
+        return update_root, new_exe, new_launcher
 
 def maybe_update(prereleases=False):
     ui = None
@@ -216,7 +229,7 @@ def maybe_update(prereleases=False):
         ui.set("Extracting..." if kind == "zip" else "Preparing...")
 
         if kind == "zip":
-            update_root, new_exe = _extract_update_from_zip(tmp_file)
+            update_root, new_exe, new_launcher = _extract_update_from_zip(tmp_file)
             if not new_exe:
                 ui.set("Error: main EXE not found in ZIP.")
                 time.sleep(3)
@@ -225,6 +238,7 @@ def maybe_update(prereleases=False):
         else:
             new_exe = tmp_file
             update_root = os.path.dirname(new_exe)
+            new_launcher = None
 
         target = _app_path()
         # current\ subfolder → one level up is the install root
@@ -232,6 +246,14 @@ def maybe_update(prereleases=False):
         root_dir = os.path.dirname(install_dir)
         launcher_exe = os.path.join(root_dir, LAUNCHER_EXE_NAME)
         update_pending = os.path.join(root_dir, "update_pending")
+
+        # If the ZIP contained a new launcher, copy it into root_dir first so
+        # the restart always uses the current name — this handles installs where
+        # the launcher still carries the old project name (CS2ChatTranslationBot.exe).
+        if new_launcher and os.path.isfile(new_launcher):
+            import shutil as _shutil2
+            _shutil2.copy2(new_launcher, launcher_exe)
+            print(f"[Updater] Launcher updated: {launcher_exe}")
 
         if not os.path.isfile(launcher_exe):
             ui.set("Error: launcher not found.")

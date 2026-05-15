@@ -14,6 +14,18 @@ def main():
             shutil.rmtree(current)
         os.rename(pending, current)
 
+        # Remove legacy files/folders from the old project name after a successful update
+        for entry in os.listdir(base):
+            if entry.lower().startswith("cs2chattranslationbot"):
+                full = os.path.join(base, entry)
+                try:
+                    if os.path.isdir(full):
+                        shutil.rmtree(full)
+                    else:
+                        os.remove(full)
+                except Exception:
+                    pass
+
     app_exe = os.path.join(current, "CounterTranslate_app.exe")
     if not os.path.isfile(app_exe):
         import ctypes
