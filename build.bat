@@ -31,6 +31,14 @@ echo WIN_VERSION     = %WIN_VERSION%
 :: Write version module (imported by app at runtime)
 echo CURRENT_VERSION = "%CURRENT_VERSION%" > app\_build_version.py
 
+:: Convert icon.png → icon.ico
+python -c "from PIL import Image; img = Image.open('app/icon.png'); img.save('app/icon.ico')"
+if %errorlevel% neq 0 (
+    echo Icon conversion failed! Make sure Pillow is installed.
+    pause
+    exit /b %errorlevel%
+)
+
 :: Clean old builds
 rmdir /s /q build 2>nul
 rmdir /s /q dist 2>nul
@@ -46,6 +54,7 @@ python -m nuitka ^
  --output-filename=%APP_EXE_NAME%.exe ^
  --output-dir=%NUITKA_BUILD_DIR% ^
  --enable-plugin=tk-inter ^
+ --windows-icon-from-ico=app\icon.ico ^
  --windows-company-name="Crankerer" ^
  --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
@@ -71,6 +80,7 @@ python -m nuitka ^
  --windows-console-mode=disable ^
  --output-filename=%APP_NAME%.exe ^
  --output-dir=%NUITKA_BUILD_DIR% ^
+ --windows-icon-from-ico=app\icon.ico ^
  --windows-company-name="Crankerer" ^
  --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
