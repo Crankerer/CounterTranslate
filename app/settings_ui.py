@@ -117,6 +117,11 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
                            activebackground=BG, activeforeground=FG_VALUE,
                            font=FONT).pack(side="left", padx=(0, 10))
 
+    _TARGET_LANG_OPTIONS = [
+        "English", "German", "French", "Spanish", "Portuguese",
+        "Russian", "Chinese", "Turkish", "Polish", "Italian",
+    ]
+
     _MODEL_OPTIONS = [
         # sorted by cost (cheapest first)
         "gpt-4.1-nano",
@@ -132,12 +137,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
         "o1",
     ]
 
-    def field_model(key, label):
-        row = tk.Frame(body, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
-                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
-
+    def _setup_combobox_style():
         style = ttk.Style(win)
         style.theme_use("clam")
         style.configure("Dark.TCombobox",
@@ -159,6 +159,28 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
         win.option_add("*TCombobox*Listbox.selectForeground", FG_ACCENT)
         win.option_add("*TCombobox*Listbox.font", FONT)
 
+    def field_target_lang(key, label):
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+        _setup_combobox_style()
+        current = cfg.get(key, _TARGET_LANG_OPTIONS[0])
+        values = list(_TARGET_LANG_OPTIONS)
+        if current not in values:
+            values.insert(0, current)
+        var = tk.StringVar(value=current)
+        cb = ttk.Combobox(row, textvariable=var, values=values,
+                          style="Dark.TCombobox", font=FONT, width=28)
+        cb.pack(side="left", fill="x", expand=True)
+        entries[key] = var
+
+    def field_model(key, label):
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+        _setup_combobox_style()
         current = cfg.get(key, _MODEL_OPTIONS[0])
         values = list(_MODEL_OPTIONS)
         if current not in values:
@@ -195,7 +217,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None):
 
     section("Interface")
     field_lang("lang", "UI language")
-    field("target_lang", "Translate into", width=30)
+    field_target_lang("target_lang", "Translate into")
     field("no_translate_langs", "Skip langs (comma-sep.)", width=30)
     field("ignore_names",       "Ignore players (comma-sep.)", width=40)
 
