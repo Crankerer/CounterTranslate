@@ -127,7 +127,16 @@ def start_tail_thread(
 
                             if full_text:
                                 lang, msg_clean = _parse_lang_prefix(full_text)
-                                if msg_clean:
+                                skip_set = {
+                                    (c or "").split("-")[0].strip().lower()
+                                    for c in snap.get("no_translate_langs", []) if c
+                                }
+                                if msg_clean and lang and lang in skip_set:
+                                    _log_setup.get().debug(
+                                        f"[llm_skip] [{lang}] {name} — lang in skip list"
+                                    )
+                                    queue.put(("stream_remove", {"id": sid}))
+                                elif msg_clean:
                                     _log_setup.get().debug(
                                         f"[llm_response] [{lang}] {name} → {msg_clean}"
                                     )
