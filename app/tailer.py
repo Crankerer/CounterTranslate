@@ -133,7 +133,7 @@ def start_tail_thread(
                                 }
                                 if msg_clean and lang and lang in skip_set:
                                     _log_setup.get().debug(
-                                        f"[llm_skip] [{lang}] {name} — lang in skip list"
+                                        f"[skipped_lang] [{lang}] {name}: {orig}"
                                     )
                                     queue.put(("stream_remove", {"id": sid}))
                                 elif msg_clean:
@@ -148,6 +148,9 @@ def start_tail_thread(
                                 else:
                                     queue.put(("stream_remove", {"id": sid}))
                             else:
+                                _log_setup.get().debug(
+                                    f"[skipped_empty] {name}: {orig}"
+                                )
                                 queue.put(("stream_remove", {"id": sid}))
 
                         pool.submit(_stream_worker)
