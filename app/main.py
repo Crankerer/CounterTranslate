@@ -115,12 +115,20 @@ def main():
         hint = "leer" if not raw_log_path else f"nicht gefunden: {raw_log_path}"
         print(t("log.hint_choose", hint=hint))
 
-        base = pick_base_folder(t, os.path.dirname(raw_log_path) if raw_log_path else BASE_DIR)
+        _cs2_default = r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
+        if raw_log_path:
+            _init = os.path.dirname(raw_log_path)
+        elif os.path.isdir(_cs2_default):
+            _init = _cs2_default
+        else:
+            _init = r"C:\Program Files (x86)\Steam\steamapps\common"
+
+        base = pick_base_folder(t, _init)
         if not base:
             print(t("abort.no_folder"))
             return
 
-        log_path = Path(base) / "common" / "Counter-Strike Global Offensive" / "game" / "csgo" / "console.log"
+        log_path = Path(base) / "game" / "csgo" / "console.log"
         log_path_str = os.path.normpath(str(log_path))
 
         cfg["log_path"] = log_path_str
