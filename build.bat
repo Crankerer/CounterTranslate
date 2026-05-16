@@ -17,11 +17,17 @@ echo Building %APP_NAME% with Nuitka...
 echo.
 
 :: --------------------------------------------------------------------------------
-:: Create build number from current date/time
-for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMMddHHmm\""') do set BUILDNUMBER=%%A
-set CURRENT_VERSION=0.10.%BUILDNUMBER%
+:: Version: use BUILD_VERSION env var if set (e.g. from CI), otherwise generate from date/time
+if defined BUILD_VERSION (
+    set _v=%BUILD_VERSION:~0,1%
+    if "%_v%"=="v" set BUILD_VERSION=%BUILD_VERSION:~1%
+    set CURRENT_VERSION=%BUILD_VERSION%
+) else (
+    for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMMddHHmm\""') do set BUILDNUMBER=%%A
+    set CURRENT_VERSION=0.10.%BUILDNUMBER%
+)
 
-:: Windows file version must be exactly 4 parts each <= 65535: 0.10.YYMM.DDmm
+:: Windows file version always generated from current time (4 parts, each <= 65535)
 for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMM.ddmm\""') do set WIN_VERSION=0.10.%%A
 
 echo CURRENT_VERSION = %CURRENT_VERSION%
@@ -35,7 +41,7 @@ echo CURRENT_VERSION = "%CURRENT_VERSION%" > app\_build_version.py
 python -c "from PIL import Image; img = Image.open('app/icon.png'); img.save('app/icon.ico')"
 if %errorlevel% neq 0 (
     echo Icon conversion failed! Make sure Pillow is installed.
-    pause
+    if not defined CI pause
     exit /b %errorlevel%
 )
 
@@ -63,7 +69,7 @@ python -m nuitka ^
 
 if %errorlevel% neq 0 (
     echo Build failed!
-    pause
+    if not defined CI pause
     exit /b %errorlevel%
 )
 
@@ -89,7 +95,7 @@ python -m nuitka ^
 
 if %errorlevel% neq 0 (
     echo Launcher build failed!
-    pause
+    if not defined CI pause
     exit /b %errorlevel%
 )
 
