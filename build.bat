@@ -19,9 +19,9 @@ echo.
 :: --------------------------------------------------------------------------------
 :: Version: use BUILD_VERSION env var if set (e.g. from CI), otherwise generate from date/time
 if defined BUILD_VERSION (
-    set _v=%BUILD_VERSION:~0,1%
-    if "%_v%"=="v" set BUILD_VERSION=%BUILD_VERSION:~1%
-    set CURRENT_VERSION=%BUILD_VERSION%
+    set _v=!BUILD_VERSION:~0,1!
+    if "!_v!"=="v" set BUILD_VERSION=!BUILD_VERSION:~1!
+    set CURRENT_VERSION=!BUILD_VERSION!
 ) else (
     for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMMddHHmm\""') do set BUILDNUMBER=%%A
     set CURRENT_VERSION=0.10.%BUILDNUMBER%
@@ -65,6 +65,7 @@ python -m nuitka ^
  --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
  --windows-product-version=%WIN_VERSION% ^
+ --assume-yes-for-downloads ^
  %ENTRY_POINT%
 
 if %errorlevel% neq 0 (
@@ -91,6 +92,7 @@ python -m nuitka ^
  --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
  --windows-product-version=%WIN_VERSION% ^
+ --assume-yes-for-downloads ^
  %LAUNCHER_SCRIPT%
 
 if %errorlevel% neq 0 (
