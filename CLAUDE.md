@@ -33,21 +33,30 @@ console.log  →  file_follow.py  →  tailer.py  →  llm.py  →  hud.py
 
 **Key modules:**
 
-- `app/main.py` — Entry point. Handles config bootstrapping (API key dialog, log path picker), wires up the `Queue` between `tailer` and `hud`, and launches both. Installs `_HudStream` that tees `sys.stdout` into the HUD queue so `print()` calls appear as overlay lines; lines starting with `[LLM-Error]` or `[Error]` are styled as errors. Also writes every line to the file logger (`log_setup`).
-- `app/tailer.py` — Background daemon thread. Reads chunks from `file_follow`, calls `iter_chat_entries`, submits each message to the `ThreadPoolExecutor` (3 workers). Each worker streams via `call_chatgpt_stream` and pushes queue messages directly (see HUD Queue Protocol below). After streaming, parses the `[lang_code]` prefix from the LLM response and enforces `no_translate_langs` client-side — skips the message if the detected language is in the skip set. Also hot-reloads `config.json` every 5 seconds; if `log_path` changes, reopens the file. Logs each detected chat entry, each LLM response, skipped-language messages, and empty responses via `log_setup`.
-- `app/llm.py` — LLM I/O. `call_chatgpt_stream` is a generator that yields raw SSE text chunks; `call_chatgpt` wraps it for non-streaming use. `build_system_prompt` constructs the system prompt from `no_translate_langs` and `target_lang`. Reasoning/o-series models (`_NO_TEMP_MODELS`, matched by `_supports_temperature`) do not receive a `temperature` field. Logs each outgoing request via `log_setup`.
+- `app/main.py` — Entry point. Handles config bootstrapping (API key dialog, log path picker), wires up the `Queue` between `tailer` and `hud`, and launches both. Installs `_HudStream` that tees `sys.stdout` into the HUD queue so `print()` calls appear as overlay lines; lines starting with `[LLM-Error]` or `[Error]` are styled as errors. Also writes every line to the file logger (`log_setup`). The API key dialog rejects keys that do not start with `sk-`.
+- `app/tailer.py` — Background daemon thread. Reads chunks from `file_follow`, calls `iter_chat_entries`, submits each message to the `ThreadPoolExecutor` (3 workers). Each worker streams via `call_chatgpt_stream` and pushes queue messages directly (see HUD Queue Protocol below). After streaming, parses the `[lang_code]` prefix from the LLM response and enforces `no_translate_langs` client-side — skips the message if the detected language is in the skip set. Also hot-reloads `config.json` every 5 seconds; if `log_path` changes, reopens the file. Logs each detected chat entry, each LLM response, skipped-language messages, and empty responses via `log_setup`. Internal buffer is trimmed when it exceeds 2 MB (kept at 1 MB).
+- `app/llm.py` — LLM I/O. `call_chatgpt_stream` is a generator that yields raw SSE text chunks; `call_chatgpt` wraps it for non-streaming use. `build_system_prompt` constructs the system prompt from `no_translate_langs` and `target_lang`. Reasoning/o-series models (`_NO_TEMP_MODELS`, matched by `_supports_temperature`) do not receive a `temperature` field. The request body is sent as raw UTF-8-encoded JSON bytes (not `json=` kwarg). Logs each outgoing request via `log_setup`.
 - `app/log_setup.py` — File logging singleton. `setup(log_dir)` creates/overwrites `countertranslate.log` in `log_dir` on every startup (mode `'w'`). `get()` returns the `logging.Logger` named `"ct"`. Import `log_setup` and call `get()` from any module that needs to log.
-- `app/parser.py` — Regex (`CHAT_ENTRY_RE`) that matches CS2 chat lines with scopes `ALLE`, `ALL`, `T`, `AT`, or `CT`.
+- `app/parser.py` — Exports `CHAT_ENTRY_RE` (regex) and `iter_chat_entries(buffer)` (generator). Matches CS2 chat lines with scopes `ALLE`, `ALL`, `T`, `AT`, or `CT`. Accepts both ASCII colon `:` and full-width colon `：` as the name/message separator. Uses `re.DOTALL`. Yields `(dt, scope, name, msg, endpos)` tuples.
 - `app/file_follow.py` — Tail implementation that handles log rotation and truncation by reopening the file.
-- `app/hud.py` — Transparent, always-on-top Tkinter window that reads from a `Queue` at ~30 fps and renders chat lines. `stream_init` and `stream_update` are no-ops; the completed translation appears on `stream_done` via `_append_struct`.
-- `app/settings_ui.py` — `open_settings(parent_root, cfg, config_path, on_save, base_dir)` opens a borderless Tkinter `Toplevel` settings dialog. `base_dir` is used for live UI language switching (calls `i18n.configure` and reopens the dialog). `target_lang` uses a styled combobox (`_TARGET_LANG_OPTIONS`). `no_translate_langs` uses a checkbox-dropdown popup (`field_multicheck`, backed by `_SKIP_LANG_OPTIONS`). When the API URL matches the official OpenAI endpoint, the model is locked to `gpt-4.1-nano` (shown as a non-editable label); for any other URL it is a free text entry. Saves back via the `on_save` callback; does not write `config.json` itself.
-- `app/config.py` — `load_config` / `save_config` around `config.json`. Merges `DEFAULTS` for backward compatibility. Supports an `open_ai_api_key_file` pointer as an alternative to embedding the key.
+- `app/hud.py` — Transparent, always-on-top Tkinter window that reads from a `Queue` at ~30 fps (33 ms poll via `root.after`) and renders chat lines. The topbar contains a ⛭ settings button (calls `on_settings` callback) and a ✕ close button. A resize handle sits at the bottom-right corner. `stream_init` and `stream_update` are no-ops; the completed translation appears on `stream_done` via `_append_struct`. The text widget trims itself when the line count exceeds 2000 (removes the oldest 200 lines). Initial alpha is 0.72 (passed from `main.py`).
+- `app/settings_ui.py` — `open_settings(parent_root, cfg, config_path, on_save, base_dir)` opens a borderless 620×680 Tkinter `Toplevel` settings dialog. `base_dir` is used for live UI language switching (calls `i18n.configure` and reopens the dialog). `target_lang` uses a styled combobox (`_TARGET_LANG_OPTIONS`). `no_translate_langs` uses a checkbox-dropdown popup (`field_multicheck`, backed by `_SKIP_LANG_OPTIONS`). The API key field is masked with `•` and has a show/hide toggle. When the API URL matches the official OpenAI endpoint, the model is locked to `gpt-4.1-nano` (shown as a non-editable label); for any other URL it is a free text entry. The bottom bar displays the current app version. Saves back via the `on_save` callback; does not write `config.json` itself.
+- `app/config.py` — `load_config` / `save_config` around `config.json`. Merges `DEFAULTS` for backward compatibility. Supports an `open_ai_api_key_file` pointer as an alternative to embedding the key. `DEFAULTS` contains legacy keys `llm_api` and `llm_model` (kept for backward compatibility with older config files; not used by the app at runtime).
 - `app/http_session.py` — Module-level `SESSION`: a shared `requests.Session` with retry/backoff (4 retries, exponential backoff, retries on 429/5xx). Import and reuse this instead of creating new sessions.
 - `app/util.py` — Small helpers: `ts()` (HH:MM:SS timestamp string), `normalize(s)` (strips zero-width Unicode characters from chat text), `primary_lang_tag(code)` (extracts the primary subtag from a BCP 47 code).
 - `app/i18n.py` — Loads `app/lang/lang_<code>.json`; `t("key", **kwargs)` does string substitution. Call `configure(base_dir, lang_code)` once at startup before any module uses `t()`. Module-level singleton; falls back to `lang_en.json` then `_DEFAULTS` if the JSON is missing. Supported UI language codes: `en`, `de`, `fr`, `pl`, `ru`.
-- `app/updater.py` — Checks GitHub releases (repo `Crankerer/CounterTranslate`) on startup when running as frozen EXE, stages the update in `update_pending/`, then restarts via the launcher which applies it.
+- `app/updater.py` — Checks GitHub releases (repo `Crankerer/CounterTranslate`) on startup when running as frozen EXE (`maybe_update(prereleases=False)`). Shows a small `_UpdateUI` progress window while downloading. Stages the update in `update_pending/`, then restarts via the launcher which applies it.
 - `launcher.py` — Thin starter EXE: applies any pending update (`update_pending/` → `current/`), then launches `CounterTranslate_app.exe`.
 - `app/_build_version.py` — Auto-generated by `build.bat`; contains `CURRENT_VERSION`. Never edit manually.
+
+## Manual Testing Helper
+
+`test/replay.py` replays a recorded `test/console.log` line by line into `test/live.log` with configurable delays so the running app can follow it live. There are no automated tests — verify behavior by running the app against a real or simulated `console.log`.
+
+Usage:
+1. Set `log_path` in `config.json` to the absolute path of `test/live.log`
+2. Start CounterTranslate
+3. In a second terminal: `python test/replay.py`
 
 ## HUD Keyboard Shortcuts
 
@@ -55,7 +64,7 @@ console.log  →  file_follow.py  →  tailer.py  →  llm.py  →  hud.py
 |-----|--------|
 | `Escape` | Close the HUD |
 | `F1` | Toggle HUD visibility |
-| `F2` | Cycle transparency (0.6 → 0.75 → 0.9) |
+| `F2` | Cycle transparency (starting at 0.72: first press → 0.9, then toggles between 0.75 and 0.9) |
 
 ## HUD Queue Protocol
 
@@ -89,6 +98,8 @@ Stream IDs are 12-digit monotonic-ns suffixes.
 | `poll_interval_ms` | `100` | Log polling interval |
 | `lang` | `"en"` | UI language (`en`, `de`, `fr`, `pl`, or `ru`) |
 | `hud_geometry` | _(auto)_ | Saved HUD window position/size (written automatically on move/resize) |
+| `llm_api` | local endpoint | Legacy key kept in `DEFAULTS` for backward compatibility; not used at runtime |
+| `llm_model` | `"local-model"` | Legacy key kept in `DEFAULTS` for backward compatibility; not used at runtime |
 
 Config is hot-reloaded by `tailer.py` every 5 seconds while running; changes to most fields take effect immediately without restart.
 
@@ -97,10 +108,6 @@ Config is hot-reloaded by `tailer.py` every 5 seconds while running; changes to 
 ## Thread Safety
 
 `tailer.py` snapshots `cfg` and `system_prompt` into local variables before submitting a `_stream_worker` to the pool. When adding new pool-submitted workers, always capture the config you need in default-argument closures (`snap=dict(current_cfg)`) so hot-reloads don't race with in-flight requests.
-
-## No Test Suite
-
-There are no automated tests. Verify behavior by running the app against a real or simulated `console.log`.
 
 ## Logging
 
