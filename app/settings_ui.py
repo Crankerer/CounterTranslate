@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 from app.i18n import t
+from app.config import DEFAULT_API_URL
 
 BG = "black"
 FG_ACCENT = "#7adfff"
@@ -72,6 +73,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
             import app.i18n as _i18n
             _i18n.configure(base_dir, new_code)
         snap = dict(cfg)
+        snap["gpt_api"] = _get_api_url()
         for k, w in entries.items():
             if isinstance(w, tk.StringVar):
                 val = w.get()
@@ -160,9 +162,6 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         ("uk", "Українська"), ("ko", "한국어"), ("ja", "日本語"),
     ]
 
-    _OPENAI_API_URL    = "https://api.openai.com/v1/chat/completions"
-    _OPENAI_FIXED_MODEL = "gpt-4.1-nano"
-
     def _setup_combobox_style():
         style = ttk.Style(win)
         style.theme_use("clam")
@@ -209,12 +208,15 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         e.insert(0, val if val else "")
         e.pack(side="left", fill="x", expand=True)
         entries[key] = e
-        show_var = tk.BooleanVar(value=False)
-        def _toggle():
-            e.config(show="" if show_var.get() else "•")
-        tk.Checkbutton(row, text=t("settings.key.show"), variable=show_var, command=_toggle,
-                       bg=BG, fg=FG_LABEL, selectcolor="#1a1a1a",
-                       activebackground=BG, font=FONT_SMALL).pack(side="left", padx=(6, 0))
+        _visible = [False]
+        eye = tk.Label(row, text="👁", fg="#444444", bg=BG,
+                       font=("Consolas", 13), cursor="hand2", padx=4)
+        eye.pack(side="left")
+        def _toggle(ev=None, _e=e, _eye=eye, _vis=_visible):
+            _vis[0] = not _vis[0]
+            _e.config(show="" if _vis[0] else "•")
+            _eye.config(fg=FG_ACCENT if _vis[0] else "#444444")
+        eye.bind("<Button-1>", _toggle)
 
     def field_multicheck(key, label):
         current = cfg.get(key, [])
@@ -284,51 +286,43 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
 
     section(t("settings.section.llm"))
 
-    # API URL — backed by StringVar so the model field can react live
-    _api_url_var = tk.StringVar(value=cfg.get("gpt_api", ""))
+    # API URL — empty = use DEFAULT_API_URL (no placeholder text shown)
     _api_url_row = tk.Frame(body, bg=BG)
     _api_url_row.pack(fill="x", pady=(4, 0))
     tk.Label(_api_url_row, text=t("settings.field.api_url"), fg=FG_LABEL, bg=BG,
              font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+    _stored_url = (cfg.get("gpt_api") or "").strip()
+    _api_url_var = tk.StringVar(value=_stored_url)
     tk.Entry(_api_url_row, bg=ENTRY_BG, fg=FG_VALUE, insertbackground=FG_VALUE,
              relief="flat", bd=3, highlightthickness=1,
              highlightcolor=FG_ACCENT, highlightbackground="#2a2a2a",
              font=FONT, textvariable=_api_url_var, width=44).pack(side="left", fill="x", expand=True)
-    entries["gpt_api"] = _api_url_var
 
-    # Model — fixed label for OpenAI, free text entry for custom API
+    def _get_api_url() -> str:
+        return _api_url_var.get().strip()
+
+    # Model — only shown when a custom URL is entered
     _model_row = tk.Frame(body, bg=BG)
-    _model_row.pack(fill="x", pady=(4, 0))
     tk.Label(_model_row, text=t("settings.field.model"), fg=FG_LABEL, bg=BG,
              font=FONT_SMALL, anchor="w", width=34).pack(side="left")
-    _model_var = tk.StringVar(value=cfg.get("gpt_model", _OPENAI_FIXED_MODEL))
-    _model_fixed = tk.Label(_model_row,
-                             text=f"{_OPENAI_FIXED_MODEL}  {t('settings.model.fixed')}",
-                             fg="#666666", bg=BG, font=FONT, anchor="w")
-    _model_entry = tk.Entry(_model_row, bg=ENTRY_BG, fg=FG_VALUE, insertbackground=FG_VALUE,
-                             relief="flat", bd=3, highlightthickness=1,
-                             highlightcolor=FG_ACCENT, highlightbackground="#2a2a2a",
-                             font=FONT, textvariable=_model_var, width=30)
-
-    def _update_model(*_):
-        if _api_url_var.get().strip() == _OPENAI_API_URL:
-            _model_entry.pack_forget()
-            _model_fixed.pack(side="left")
-            _model_var.set(_OPENAI_FIXED_MODEL)
-        else:
-            _model_fixed.pack_forget()
-            _model_entry.pack(side="left", fill="x", expand=True)
-
-    _api_url_var.trace_add("write", _update_model)
-    _update_model()
+    _model_var = tk.StringVar(value=cfg.get("gpt_model", "gpt-4.1-nano"))
+    tk.Entry(_model_row, bg=ENTRY_BG, fg=FG_VALUE, insertbackground=FG_VALUE,
+             relief="flat", bd=3, highlightthickness=1,
+             highlightcolor=FG_ACCENT, highlightbackground="#2a2a2a",
+             font=FONT, textvariable=_model_var, width=30).pack(side="left", fill="x", expand=True)
     entries["gpt_model"] = _model_var
+
+    def _update_model_visibility(*_):
+        if _api_url_var.get().strip():
+            _model_row.pack(fill="x", pady=(4, 0), after=_api_url_row)
+        else:
+            _model_row.pack_forget()
+
+    _api_url_var.trace_add("write", _update_model_visibility)
+    _update_model_visibility()
 
     field("temperature",         t("settings.field.temperature"),   width=10)
     field_key("open_ai_api_key", t("settings.field.api_key"))
-    field("open_ai_api_key_file", t("settings.field.api_key_file"),
-          width=36, browse_file=True,
-          browse_title=t("settings.field.api_key_file"),
-          browse_types=[("Text files", "*.txt"), ("All files", "*.*")])
 
     section(t("settings.section.log"))
     field("log_path",         t("settings.field.log_path"),
@@ -352,6 +346,9 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
 
     def _save():
         new_cfg = dict(cfg)
+        new_cfg["gpt_api"] = _get_api_url()
+        if not new_cfg["gpt_api"]:
+            new_cfg["gpt_model"] = "gpt-4.1-nano"
         for key, widget in entries.items():
             if isinstance(widget, tk.StringVar):
                 val = widget.get()

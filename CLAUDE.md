@@ -58,6 +58,11 @@ Usage:
 2. Start CounterTranslate
 3. In a second terminal: `python test/replay.py`
 
+For testing against a live CS2 installation, CS2 must be launched with the `-condebug` Steam launch option. The log is then written to:
+```
+C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\console.log
+```
+
 ## HUD Keyboard Shortcuts
 
 | Key | Action |
@@ -111,7 +116,7 @@ Config is hot-reloaded by `tailer.py` every 5 seconds while running; changes to 
 
 ## Logging
 
-`countertranslate.log` is written to `CONFIG_DIR` (project root in dev, install root in compiled build). It is overwritten on every startup. Use `log_setup.get()` to obtain the logger from any module — do not create new loggers.
+`countertranslate.log` is written to `CONFIG_DIR`. In dev mode `CONFIG_DIR` equals the project root. In compiled builds `CONFIG_DIR` is the install root (one level above `current/` where the EXE lives), so `config.json` and the log survive updates. The log is overwritten on every startup. Use `log_setup.get()` to obtain the logger from any module — do not create new loggers.
 
 | Level | What is logged |
 |-------|---------------|

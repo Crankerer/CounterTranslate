@@ -1,13 +1,15 @@
 import os, json
 
+DEFAULT_API_URL = "https://crimson-dog-44043.zap.cloud/v1/chat/completions"
+
 DEFAULTS = {
     "log_path": "",
     "ignore_names": [],
     "poll_interval_ms": 100,
     "llm_api": "http://localhost:1234/v1/chat/completions",
     "llm_model": "local-model",
-    "gpt_api": "https://api.openai.com/v1/chat/completions",
-    "gpt_model": "gpt-4o-mini",
+    "gpt_api": "",
+    "gpt_model": "gpt-4.1-nano",
     "temperature": 0.2,
     "no_translate_langs": ["de"],
     "target_lang": "German",

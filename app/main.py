@@ -59,34 +59,6 @@ def ensure_config_exists(path: str, t) -> None:
         except Exception as e:
             print(t("cfg.create_fail", err=e))
 
-def request_api_key(t) -> str:
-    import tkinter as tk
-    from tkinter import simpledialog, messagebox
-    root = tk.Tk()
-    root.withdraw()
-    try:
-        key = simpledialog.askstring(
-            t("api.dialog.title"),
-            t("api.dialog.prompt"),
-            show="*"
-        )
-        if not key:
-            messagebox.showwarning(
-                t("api.dialog.warning.empty_title"),
-                t("api.dialog.warning.empty_msg")
-            )
-            return ""
-        key = key.strip()
-        if not key.startswith("sk-"):
-            messagebox.showwarning(
-                t("api.dialog.warning.invalid_title"),
-                t("api.dialog.warning.invalid_msg")
-            )
-            return ""
-        return key
-    finally:
-        root.destroy()
-
 def main():
     _log = _log_setup.setup(CONFIG_DIR)
     _log.info("=== CounterTranslate startup ===")
@@ -101,21 +73,6 @@ def main():
 
     # 3) config.json erstmalig anlegen (jetzt mit echten i18n-Strings)
     ensure_config_exists(CONFIG_FILENAME, t)
-
-    # 4) API-Key ggf. erfragen & speichern
-    api_key = (cfg.get("open_ai_api_key") or "").strip()
-    if not api_key:
-        print(t("api.missing"))
-        key = request_api_key(t)
-        if not key:
-            print(t("abort.no_api"))
-            return
-        cfg["open_ai_api_key"] = key
-        try:
-            save_config(CONFIG_FILENAME, cfg)
-            print(t("api.saved", path=CONFIG_FILENAME))
-        except Exception as e:
-            print(t("api.save_fail", err=e))
 
     # 4) log_path prüfen (leer/ungültig → Steam-Basisordner wählen & Pfad bauen)
     raw_log_path = (cfg.get("log_path") or "").strip()
