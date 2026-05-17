@@ -200,6 +200,22 @@ def maybe_update(prereleases=False):
             print("[Updater] Already up to date.")
             return False
 
+        # --- ask user ---
+        import tkinter as tk
+        from tkinter import messagebox
+        _root = tk.Tk()
+        _root.withdraw()
+        _root.attributes("-topmost", True)
+        want = messagebox.askyesno(
+            "CounterTranslate – Update",
+            f"A new version is available:\n\n  {latest_version_str}\n\nDo you want to update now?",
+            parent=_root,
+        )
+        _root.destroy()
+        if not want:
+            print("[Updater] User declined update.")
+            return False
+
         # --- update found: show UI from here on ---
         ui = _UpdateUI(CURRENT_VERSION, latest_version_str)
 
