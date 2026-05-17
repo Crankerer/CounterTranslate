@@ -22,6 +22,18 @@ def should_ignore(name: str, ignore_names: list[str]) -> bool:
     return any(n == normalize(x).casefold() for x in ignore_names)
 
 
+_RELOAD_KEYS = frozenset({
+    "gpt_api", "gpt_model", "temperature",
+    "no_translate_langs", "target_lang",
+    "log_path", "poll_interval_ms", "ignore_names",
+    "open_ai_api_key",
+})
+
+
+def _translation_cfg(cfg: dict) -> dict:
+    return {k: cfg[k] for k in _RELOAD_KEYS if k in cfg}
+
+
 def start_tail_thread(
     log_path: str,
     config_path: str,
@@ -60,7 +72,7 @@ def start_tail_thread(
                     try:
                         from .config import load_config
                         new_cfg = load_config(config_path)
-                        if new_cfg != current_cfg:
+                        if _translation_cfg(new_cfg) != _translation_cfg(current_cfg):
                             current_cfg = new_cfg
                             current_ignore = current_cfg.get("ignore_names", [])
                             system_prompt = build_system_prompt(
