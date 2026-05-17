@@ -292,6 +292,7 @@ def maybe_update(prereleases=False):
         print(f"[Updater] Relaunching via launcher: {launcher_exe}")
         subprocess.Popen(
             [launcher_exe] + sys.argv[1:],
+            cwd=root_dir,
             close_fds=True,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )

@@ -50,7 +50,7 @@ def main():
         )
         sys.exit(1)
 
-    subprocess.Popen([app_exe] + sys.argv[1:])
+    subprocess.Popen([app_exe] + sys.argv[1:], cwd=current)
     sys.exit(0)
 
 
