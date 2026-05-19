@@ -75,21 +75,21 @@ class TkHud:
 
         close_btn = tk.Label(topbar, text="✕", fg="#ff6666", bg="black",
                              font=("Consolas", 14, "bold"), cursor="hand2")
-        close_btn.pack(side="right", padx=6, pady=2)
+        close_btn.pack(side="right", padx=4, pady=2)
         close_btn.bind("<Enter>", lambda e: close_btn.config(fg="#ffaaaa"))
         close_btn.bind("<Leave>", lambda e: close_btn.config(fg="#ff6666"))
         close_btn.bind("<Button-1>", lambda e: self.root.destroy())
 
         settings_btn = tk.Label(topbar, text="⛭", fg="#7adfff", bg="black",
                                 font=("Consolas", 13, "bold"), cursor="hand2")
-        settings_btn.pack(side="right", padx=2, pady=2)
+        settings_btn.pack(side="right", padx=4, pady=2)
         settings_btn.bind("<Enter>", lambda e: settings_btn.config(fg="#ffffff"))
         settings_btn.bind("<Leave>", lambda e: settings_btn.config(fg="#7adfff"))
         settings_btn.bind("<Button-1>", lambda e: self.on_settings() if self.on_settings else None)
 
         compact_btn = tk.Label(topbar, text="⊟", fg="#aaaaaa", bg="black",
                                font=("Consolas", 13, "bold"), cursor="hand2")
-        compact_btn.pack(side="right", padx=2, pady=2)
+        compact_btn.pack(side="right", padx=4, pady=2)
         compact_btn.bind("<Enter>", lambda e: compact_btn.config(fg="#ffffff"))
         compact_btn.bind("<Leave>", lambda e: compact_btn.config(fg="#aaaaaa"))
         compact_btn.bind("<Button-1>", lambda e: self.set_compact(True))
@@ -298,7 +298,8 @@ class TkHud:
         self.root.withdraw() if not self.visible else self.root.deiconify()
 
     def _start_move(self, event):
-        self._drag["x"], self._drag["y"] = event.x, event.y
+        self._drag["x"] = event.x_root - self.root.winfo_x()
+        self._drag["y"] = event.y_root - self.root.winfo_y()
 
     def _on_move(self, event):
         x, y = event.x_root - self._drag["x"], event.y_root - self._drag["y"]
