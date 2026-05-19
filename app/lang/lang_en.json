@@ -60,6 +60,7 @@
   "settings.field.log_path": "console.log path",
   "settings.field.compact_mode": "Compact mode (ticker)",
   "settings.field.ticker_speed": "Ticker speed (px/frame)",
+  "settings.field.hud_alpha": "HUD opacity (%)",
   "settings.field.poll_interval": "Poll interval (ms)",
   "settings.model.fixed": "(fixed)",
   "settings.btn.save": "Save",

@@ -31,7 +31,7 @@ FONT_BOLD = ("Consolas", 10, "bold")
 FONT_SMALL = ("Consolas", 9)
 
 
-def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_dir: str = ""):
+def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_dir: str = "", alpha_var=None):
     win = tk.Toplevel(parent_root)
     win.overrideredirect(True)
     win.configure(bg=BG)
@@ -94,6 +94,8 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         for k, w in entries.items():
             if isinstance(w, tk.BooleanVar):
                 snap[k] = w.get()
+            elif isinstance(w, tk.IntVar):
+                snap[k] = w.get() / 100.0
             elif isinstance(w, tk.StringVar):
                 val = w.get()
                 if k in ("no_translate_langs", "ignore_names"):
@@ -113,7 +115,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                 else:
                     snap[k] = raw
         win.destroy()
-        open_settings(parent_root, snap, config_path, on_save=on_save, base_dir=base_dir)
+        open_settings(parent_root, snap, config_path, on_save=on_save, base_dir=base_dir, alpha_var=alpha_var)
 
     # ── field helpers ─────────────────────────────────────────────────────────
     def section(text):
@@ -237,6 +239,42 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
             _eye.config(fg=FG_ACCENT if _vis[0] else "#444444")
         eye.bind("<Button-1>", _toggle)
 
+    def field_slider(key, label, from_val=20, to_val=100, resolution=5, shared_var=None):
+        """Stores value as int in widget; divide by 100 to get float for alpha."""
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+        raw = cfg.get(key, from_val / 100)
+        int_val = max(from_val, min(to_val, int(round(float(raw) * 100))))
+        if shared_var is not None:
+            var = shared_var
+            var.set(int_val)
+        else:
+            var = tk.IntVar(value=int_val)
+        val_lbl = tk.Label(row, text=str(int_val), fg=FG_VALUE, bg=BG, font=FONT, width=4, anchor="e")
+        val_lbl.pack(side="right")
+        def _update(v): val_lbl.config(text=str(int(float(v))))
+        _tid = [None]
+        def _safe_update(*_):
+            try:
+                val_lbl.config(text=str(var.get()))
+            except Exception:
+                pass
+        _tid[0] = var.trace_add("write", _safe_update)
+        def _cleanup(event=None):
+            try:
+                var.trace_remove("write", _tid[0])
+            except Exception:
+                pass
+        win.bind("<Destroy>", _cleanup, "+")
+        tk.Scale(row, variable=var, from_=from_val, to=to_val, orient="horizontal",
+                 resolution=resolution, bg=BG, fg="#555555", troughcolor=ENTRY_BG,
+                 highlightthickness=0, activebackground=FG_ACCENT,
+                 showvalue=False, command=_update,
+                 sliderlength=14, width=8).pack(side="left", fill="x", expand=True, padx=(0, 6))
+        entries[key] = var
+
     def field_check(key, label):
         row = tk.Frame(body, bg=BG)
         row.pack(fill="x", pady=(4, 0))
@@ -318,6 +356,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     field("ignore_names",         t("settings.field.ignore_players"),   width=40)
     field_check("compact_mode",   t("settings.field.compact_mode"))
     field("ticker_speed",         t("settings.field.ticker_speed"),      width=6)
+    field_slider("hud_alpha",     t("settings.field.hud_alpha"), shared_var=alpha_var)
 
     section(t("settings.section.llm"))
 
@@ -387,6 +426,9 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         for key, widget in entries.items():
             if isinstance(widget, tk.BooleanVar):
                 new_cfg[key] = widget.get()
+                continue
+            if isinstance(widget, tk.IntVar):
+                new_cfg[key] = widget.get() / 100.0
                 continue
             if isinstance(widget, tk.StringVar):
                 val = widget.get()

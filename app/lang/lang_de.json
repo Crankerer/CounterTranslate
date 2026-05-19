@@ -60,6 +60,7 @@
   "settings.field.log_path": "Pfad zur console.log",
   "settings.field.compact_mode": "Kompaktmodus (Laufband)",
   "settings.field.ticker_speed": "Ticker-Geschwindigkeit (px/Frame)",
+  "settings.field.hud_alpha": "HUD-Deckkraft (%)",
   "settings.field.poll_interval": "Abfrageintervall (ms)",
   "settings.model.fixed": "(fest)",
   "settings.btn.save": "Speichern",

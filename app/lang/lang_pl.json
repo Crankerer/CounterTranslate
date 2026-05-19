@@ -60,6 +60,7 @@
   "settings.field.log_path": "Ścieżka console.log",
   "settings.field.compact_mode": "Tryb kompaktowy (pasek)",
   "settings.field.ticker_speed": "Prędkość paska (px/klatka)",
+  "settings.field.hud_alpha": "Krycie HUD (%)",
   "settings.field.poll_interval": "Interwał odpytywania (ms)",
   "settings.model.fixed": "(stały)",
   "settings.btn.save": "Zapisz",

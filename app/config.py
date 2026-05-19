@@ -16,7 +16,8 @@ DEFAULTS = {
     "open_ai_api_key": os.environ.get("OPENAI_API_KEY", ""),
     "lang": "en",
     "compact_mode": False,
-    "ticker_speed": 2
+    "ticker_speed": 2,
+    "hud_alpha": 0.72
 }
 
 

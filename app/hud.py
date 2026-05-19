@@ -22,11 +22,13 @@ class TkHud:
 
     def __init__(self, queue, alpha: float = 0.75, font="Consolas 11",
                  geometry: str = None, on_geometry_change=None, on_settings=None,
-                 on_font_change=None, compact_mode: bool = False, ticker_speed: int = 2):
+                 on_font_change=None, on_alpha_change=None,
+                 compact_mode: bool = False, ticker_speed: int = 2):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
         self.on_font_change = on_font_change
+        self.on_alpha_change = on_alpha_change
         self._line_count = 0
         self._stream_marks: dict = {}
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
@@ -295,7 +297,10 @@ class TkHud:
     def _cycle_alpha(self):
         cur = float(self.root.attributes("-alpha"))
         idx = min(range(len(self._ALPHA_STEPS)), key=lambda i: abs(self._ALPHA_STEPS[i] - cur))
-        self.root.attributes("-alpha", self._ALPHA_STEPS[(idx + 1) % len(self._ALPHA_STEPS)])
+        new_alpha = self._ALPHA_STEPS[(idx + 1) % len(self._ALPHA_STEPS)]
+        self.root.attributes("-alpha", new_alpha)
+        if self.on_alpha_change:
+            self.on_alpha_change(new_alpha)
 
     def _toggle_visible(self, *_):
         self.visible = not self.visible

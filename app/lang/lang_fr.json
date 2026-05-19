@@ -60,6 +60,7 @@
   "settings.field.log_path": "Chemin console.log",
   "settings.field.compact_mode": "Mode compact (défilant)",
   "settings.field.ticker_speed": "Vitesse du défilant (px/image)",
+  "settings.field.hud_alpha": "Opacité HUD (%)",
   "settings.field.poll_interval": "Intervalle (ms)",
   "settings.model.fixed": "(fixe)",
   "settings.btn.save": "Enregistrer",

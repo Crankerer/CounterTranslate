@@ -150,6 +150,29 @@ def main():
         except Exception:
             pass
 
+    hud = TkHud(
+        q, alpha=float(cfg.get("hud_alpha", 0.72)), font=cfg.get("hud_font", "Consolas 11"),
+        geometry=cfg.get("hud_geometry"),
+        on_geometry_change=save_geometry,
+        on_font_change=save_font,
+        compact_mode=bool(cfg.get("compact_mode", False)),
+        ticker_speed=int(cfg.get("ticker_speed", 2)),
+    )
+
+    import tkinter as _tk
+    _alpha_var = _tk.IntVar(master=hud.root,
+                            value=int(round(float(cfg.get("hud_alpha", 0.72)) * 100)))
+
+    def _on_alpha_change(new_alpha: float):
+        cfg["hud_alpha"] = new_alpha
+        _alpha_var.set(int(round(new_alpha * 100)))
+        try:
+            save_config(CONFIG_FILENAME, cfg)
+        except Exception:
+            pass
+
+    hud.on_alpha_change = _on_alpha_change
+
     def open_settings_dialog():
         nonlocal cfg
         def on_save(new_cfg):
@@ -162,17 +185,13 @@ def main():
                 print(t("cfg.save_fail", err=e))
             hud.set_compact(bool(new_cfg.get("compact_mode", False)))
             hud.set_ticker_speed(int(new_cfg.get("ticker_speed", 2)))
-        open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR)
+            new_alpha = float(new_cfg.get("hud_alpha", 0.72))
+            hud.root.attributes("-alpha", new_alpha)
+            _alpha_var.set(int(round(new_alpha * 100)))
+        open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR,
+                      alpha_var=_alpha_var)
 
-    hud = TkHud(
-        q, alpha=0.72, font=cfg.get("hud_font", "Consolas 11"),
-        geometry=cfg.get("hud_geometry"),
-        on_geometry_change=save_geometry,
-        on_font_change=save_font,
-        on_settings=open_settings_dialog,
-        compact_mode=bool(cfg.get("compact_mode", False)),
-        ticker_speed=int(cfg.get("ticker_speed", 2)),
-    )
+    hud.on_settings = open_settings_dialog
 
     class _HudStream:
         """Tee: writes to original stdout (if available) and feeds lines to the HUD queue."""
