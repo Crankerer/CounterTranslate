@@ -5,7 +5,7 @@ from app.i18n import t
 from app.config import DEFAULT_API_URL
 
 
-def _apply_round_region(win, radius: int = 50) -> None:
+def _apply_round_region(win, radius: int = 20) -> None:
     if os.name != "nt":
         return
     try:

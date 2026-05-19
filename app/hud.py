@@ -125,7 +125,7 @@ class TkHud:
 
     # ── rounded corners ──────────────────────────────────────────────────────
 
-    def _round_corners(self, radius: int = 50):
+    def _round_corners(self, radius: int = 20):
         if os.name != "nt":
             return
         try:
