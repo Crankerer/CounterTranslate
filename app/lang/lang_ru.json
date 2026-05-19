@@ -59,6 +59,7 @@
   "settings.field.api_key_file": "Файл ключа API",
   "settings.field.log_path": "Путь к console.log",
   "settings.field.compact_mode": "Компактный режим (бегущая строка)",
+  "settings.field.ticker_speed": "Скорость строки (пкс/кадр)",
   "settings.field.poll_interval": "Интервал опроса (мс)",
   "settings.model.fixed": "(фиксирован)",
   "settings.btn.save": "Сохранить",

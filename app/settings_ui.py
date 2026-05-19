@@ -107,7 +107,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                 elif k == "temperature":
                     try: snap[k] = float(raw)
                     except ValueError: pass
-                elif k == "poll_interval_ms":
+                elif k in ("poll_interval_ms", "ticker_speed"):
                     try: snap[k] = int(raw)
                     except ValueError: pass
                 else:
@@ -317,6 +317,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     field_multicheck("no_translate_langs", t("settings.field.skip_langs"))
     field("ignore_names",         t("settings.field.ignore_players"),   width=40)
     field_check("compact_mode",   t("settings.field.compact_mode"))
+    field("ticker_speed",         t("settings.field.ticker_speed"),      width=6)
 
     section(t("settings.section.llm"))
 
@@ -400,7 +401,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                 elif key == "temperature":
                     try: new_cfg[key] = float(raw)
                     except ValueError: pass
-                elif key == "poll_interval_ms":
+                elif key in ("poll_interval_ms", "ticker_speed"):
                     try: new_cfg[key] = int(raw)
                     except ValueError: pass
                 elif key == "open_ai_api_key":

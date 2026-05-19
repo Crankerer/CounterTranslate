@@ -16,12 +16,12 @@ class TkHud:
     }
 
     _TICKER_MS = 30
-    _TICKER_PX = 2
     _TICKER_GAP = 60
+    _COMPACT_H = 26
 
     def __init__(self, queue, alpha: float = 0.75, font="Consolas 11",
                  geometry: str = None, on_geometry_change=None, on_settings=None,
-                 compact_mode: bool = False):
+                 compact_mode: bool = False, ticker_speed: int = 6):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
@@ -31,6 +31,7 @@ class TkHud:
         self._font = font
         self._compact = False
         self._ticker_active = False
+        self._ticker_px = max(1, ticker_speed)
         self._normal_geometry: str | None = None
 
         self.root = tk.Tk()
@@ -62,8 +63,11 @@ class TkHud:
         frame = tk.Frame(self.root, bg="black")
         frame.pack(fill="both", expand=True)
 
-        # Topbar with Close / Settings buttons
-        topbar = tk.Frame(frame, bg="black")
+        # ── Normal mode layout ────────────────────────────────────────────────
+        self._normal_frame = tk.Frame(frame, bg="black")
+        self._normal_frame.pack(fill="both", expand=True)
+
+        topbar = tk.Frame(self._normal_frame, bg="black")
         topbar.pack(fill="x", side="top")
 
         close_btn = tk.Label(topbar, text="✕", fg="#ff6666", bg="black",
@@ -80,14 +84,12 @@ class TkHud:
         settings_btn.bind("<Leave>", lambda e: settings_btn.config(fg="#7adfff"))
         settings_btn.bind("<Button-1>", lambda e: self.on_settings() if self.on_settings else None)
 
-        # Resize handle must be packed before the expanding text widget so it
-        # actually gets allocated space at the bottom-right corner.
-        self._resize_handle = tk.Frame(frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
+        self._resize_handle = tk.Frame(self._normal_frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
         self._resize_handle.pack(side="bottom", anchor="se")
         self._resize_handle.pack_propagate(False)
 
         self.text = tk.Text(
-            frame,
+            self._normal_frame,
             bg="black", fg=self.COLORS["meta"],
             insertbackground="white",
             relief="flat", bd=0, highlightthickness=0,
@@ -106,10 +108,28 @@ class TkHud:
         self._resize_handle.bind("<B1-Motion>", self._resize_move)
         self._resize_handle.bind("<ButtonRelease-1>", self._resize_end)
 
+        # ── Compact mode layout (single row: ticker | ⛭ ✕) ──────────────────
+        self._compact_frame = tk.Frame(frame, bg="black")
+        # Not packed initially; set_compact() controls visibility
+
         self._ticker_canvas = tk.Canvas(
-            frame, bg="black", height=26, bd=0, highlightthickness=0,
+            self._compact_frame, bg="black", bd=0, highlightthickness=0,
         )
-        # Not packed here — set_compact() controls visibility
+        self._ticker_canvas.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=3)
+
+        _cc = tk.Label(self._compact_frame, text="✕", fg="#ff6666", bg="black",
+                       font=("Consolas", 11, "bold"), cursor="hand2")
+        _cc.pack(side="right", padx=(2, 4))
+        _cc.bind("<Enter>", lambda e: _cc.config(fg="#ffaaaa"))
+        _cc.bind("<Leave>", lambda e: _cc.config(fg="#ff6666"))
+        _cc.bind("<Button-1>", lambda e: self.root.destroy())
+
+        _cs = tk.Label(self._compact_frame, text="⛭", fg="#7adfff", bg="black",
+                       font=("Consolas", 11, "bold"), cursor="hand2")
+        _cs.pack(side="right", padx=2)
+        _cs.bind("<Enter>", lambda e: _cs.config(fg="#ffffff"))
+        _cs.bind("<Leave>", lambda e: _cs.config(fg="#7adfff"))
+        _cs.bind("<Button-1>", lambda e: self.on_settings() if self.on_settings else None)
 
         self._poll()
         if os.name == "nt":
@@ -152,7 +172,8 @@ class TkHud:
                 hwnd = self.root.winfo_id()
             w, h = self.root.winfo_width(), self.root.winfo_height()
             if w > 1 and h > 1:
-                hrgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, radius * 2, radius * 2)
+                r = min(radius, h // 2, w // 2)
+                hrgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, r * 2, r * 2)
                 ctypes.windll.user32.SetWindowRgn(hwnd, hrgn, True)
         except Exception:
             pass
@@ -165,31 +186,33 @@ class TkHud:
         self._compact = enabled
         if enabled:
             self._normal_geometry = self.root.geometry()
-            self.text.pack_forget()
-            self._resize_handle.pack_forget()
-            self._ticker_canvas.pack(fill="x", padx=8, pady=6)
+            self._normal_frame.pack_forget()
+            self._compact_frame.pack(fill="both", expand=True)
             self._ticker_active = True
-            self.root.update_idletasks()
-            compact_h = self.root.winfo_reqheight()
             m = re.match(r'\d+x\d+([+-]\d+[+-]\d+)', self.root.geometry())
             pos = m.group(1) if m else "+40+720"
             w = self.root.winfo_width() or 800
-            self.root.geometry(f"{w}x{compact_h}{pos}")
+            self.root.geometry(f"{w}x{self._COMPACT_H}{pos}")
+            self.root.update_idletasks()
+            self._round_corners()
             self.root.after(self._TICKER_MS, self._ticker_tick)
         else:
             self._ticker_active = False
-            self._ticker_canvas.pack_forget()
+            self._compact_frame.pack_forget()
             self._ticker_canvas.delete("all")
-            self._resize_handle.pack(side="bottom", anchor="se")
-            self.text.pack(fill="both", expand=True, padx=8, pady=4)
+            self._normal_frame.pack(fill="both", expand=True)
             if self._normal_geometry:
                 self.root.geometry(self._normal_geometry)
-        self.root.after(30, self._round_corners)
+            self.root.update_idletasks()
+            self._round_corners()
+
+    def set_ticker_speed(self, px: int):
+        self._ticker_px = max(1, px)
 
     def _ticker_tick(self):
         if not self._ticker_active:
             return
-        self._ticker_canvas.move("ticker", -self._TICKER_PX, 0)
+        self._ticker_canvas.move("ticker", -self._ticker_px, 0)
         for item in self._ticker_canvas.find_withtag("ticker"):
             try:
                 bbox = self._ticker_canvas.bbox(item)
