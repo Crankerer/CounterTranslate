@@ -19,6 +19,8 @@ build.bat
 
 This uses Nuitka to produce `dist/CounterTranslate/CounterTranslate.exe` (Launcher) and `dist/CounterTranslate/current/CounterTranslate_app.exe` (App). Language files are copied into the `current/lang/` folder. The version string is auto-generated from the current date/time and written to `app/_build_version.py`.
 
+**Build-time dependencies** (not in `requirements.txt`): `nuitka` and `Pillow` (used to convert `app/icon.png` → `app/icon.ico`). Set the `BUILD_VERSION` env var to override the auto-generated version (e.g. from CI: `set BUILD_VERSION=1.2.3`).
+
 ## Architecture Overview
 
 The app is a Windows-only overlay that tails the CS2 `console.log`, parses chat messages, translates them via an OpenAI-compatible LLM API using streaming, and displays the result in a transparent Tkinter HUD.
@@ -69,7 +71,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\ga
 |-----|--------|
 | `Escape` | Close the HUD |
 | `F1` | Toggle HUD visibility |
-| `F2` | Cycle transparency (starting at 0.72: first press → 0.9, then toggles between 0.75 and 0.9) |
+| `F2` | Cycle transparency: three steps — `< 0.8 → 0.9`, `[0.8–0.9) → 0.6`, `≥ 0.9 → 0.75`. Starting at 0.72: first press → 0.9 → 0.75 → 0.9 → … |
 
 ## HUD Queue Protocol
 
@@ -102,7 +104,7 @@ Stream IDs are 12-digit monotonic-ns suffixes.
 | `ignore_names` | `[]` | Player names to ignore |
 | `poll_interval_ms` | `100` | Log polling interval |
 | `lang` | `"en"` | UI language (`en`, `de`, `fr`, `pl`, or `ru`) |
-| `hud_geometry` | _(auto)_ | Saved HUD window position/size (written automatically on move/resize) |
+| `hud_geometry` | _(absent = `800x320+40+720`)_ | Saved HUD window position/size (written automatically on move/resize) |
 | `llm_api` | local endpoint | Legacy key kept in `DEFAULTS` for backward compatibility; not used at runtime |
 | `llm_model` | `"local-model"` | Legacy key kept in `DEFAULTS` for backward compatibility; not used at runtime |
 
