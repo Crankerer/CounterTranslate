@@ -87,6 +87,13 @@ class TkHud:
         settings_btn.bind("<Leave>", lambda e: settings_btn.config(fg="#7adfff"))
         settings_btn.bind("<Button-1>", lambda e: self.on_settings() if self.on_settings else None)
 
+        compact_btn = tk.Label(topbar, text="⊟", fg="#aaaaaa", bg="black",
+                               font=("Consolas", 13, "bold"), cursor="hand2")
+        compact_btn.pack(side="right", padx=2, pady=2)
+        compact_btn.bind("<Enter>", lambda e: compact_btn.config(fg="#ffffff"))
+        compact_btn.bind("<Leave>", lambda e: compact_btn.config(fg="#aaaaaa"))
+        compact_btn.bind("<Button-1>", lambda e: self.set_compact(True))
+
         self._resize_handle = tk.Frame(self._normal_frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
         self._resize_handle.pack(side="bottom", anchor="se")
         self._resize_handle.pack_propagate(False)
@@ -133,6 +140,13 @@ class TkHud:
         _cs.bind("<Enter>", lambda e: _cs.config(fg="#ffffff"))
         _cs.bind("<Leave>", lambda e: _cs.config(fg="#7adfff"))
         _cs.bind("<Button-1>", lambda e: self.on_settings() if self.on_settings else None)
+
+        _ce = tk.Label(self._compact_frame, text="⊞", fg="#aaaaaa", bg="black",
+                       font=("Consolas", 11, "bold"), cursor="hand2")
+        _ce.pack(side="right", padx=2)
+        _ce.bind("<Enter>", lambda e: _ce.config(fg="#ffffff"))
+        _ce.bind("<Leave>", lambda e: _ce.config(fg="#aaaaaa"))
+        _ce.bind("<Button-1>", lambda e: self.set_compact(False))
 
         self._poll()
         if os.name == "nt":
