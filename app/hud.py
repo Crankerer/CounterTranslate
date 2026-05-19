@@ -48,6 +48,20 @@ class TkHud:
         self.root.wm_attributes("-alpha", alpha)
         self.visible = True
 
+        _icon_dir = os.path.dirname(os.path.abspath(__file__))
+        _ico = os.path.join(_icon_dir, "icon.ico")
+        _png = os.path.join(_icon_dir, "icon.png")
+        try:
+            if os.path.isfile(_ico):
+                self.root.iconbitmap(_ico)
+            elif os.path.isfile(_png):
+                from PIL import Image, ImageTk
+                _img = Image.open(_png)
+                self._icon_ref = ImageTk.PhotoImage(_img)
+                self.root.iconphoto(True, self._icon_ref)
+        except Exception:
+            pass
+
         if os.name == "nt":
             try:
                 import ctypes
@@ -155,6 +169,7 @@ class TkHud:
         self._poll()
         if os.name == "nt":
             self.root.after(100, self._round_corners)
+            self.root.after(200, self._show_in_taskbar)
         if compact_mode:
             self.root.after(50, lambda: self.set_compact(True))
 
@@ -197,6 +212,26 @@ class TkHud:
                 r = min(radius, h // 2, w // 2)
                 hrgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, r * 2, r * 2)
                 ctypes.windll.user32.SetWindowRgn(hwnd, hrgn, True)
+        except Exception:
+            pass
+
+    def _show_in_taskbar(self):
+        if os.name != "nt":
+            return
+        try:
+            import ctypes
+            GWL_EXSTYLE = -20
+            WS_EX_APPWINDOW = 0x00040000
+            WS_EX_TOOLWINDOW = 0x00000080
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            if not hwnd:
+                hwnd = self.root.winfo_id()
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            style = (style | WS_EX_APPWINDOW) & ~WS_EX_TOOLWINDOW
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+            # Hide/show cycle forces the taskbar to register the new style
+            self.root.withdraw()
+            self.root.after(50, self.root.deiconify)
         except Exception:
             pass
 
