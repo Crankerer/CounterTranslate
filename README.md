@@ -11,9 +11,11 @@ Transparent overlay for CS2 that automatically translates chat messages in real 
 When enemies or teammates write in Russian, Romanian, Chinese, or any other language, the translation appears immediately as a semi-transparent overlay — without alt-tabbing, copy-pasting, or opening a separate window.
 
 - All languages are detected and translated automatically
-- Transparent overlay, always on top
+- Transparent overlay, always on top — adjustable opacity
 - Your own language is never translated (default: German)
 - Specific players can be ignored
+- Compact/ticker mode: single scrolling line for minimal screen space
+- Font size adjustable with Ctrl+MouseWheel
 - Configurable translation target language and skip list
 - Auto-updates on startup (compiled build only)
 
@@ -94,9 +96,10 @@ On **first launch**, CounterTranslate will automatically ask for:
 |-----|--------|
 | `Escape` | Close the overlay |
 | `F1` | Toggle overlay visibility |
-| `F2` | Cycle transparency |
+| `F2` | Cycle opacity: 100 % → 80 % → 60 % → 40 % → 20 % → 100 % |
+| `Ctrl+MouseWheel` | Zoom font size (normal mode only) |
 
-The overlay can also be dragged to any position and resized using the handle in the bottom-right corner.
+The overlay can also be dragged to any position and resized using the handle in the bottom-right corner. Use the ⊟ button in the top bar to switch to compact/ticker mode, and ⊞ to switch back.
 
 ---
 
@@ -112,11 +115,13 @@ Click the ⛭ icon in the top-right of the overlay to open the settings dialog:
 | **Translate into** | Target language for translations (e.g. `German`) |
 | **Skip langs** | Languages that are never translated (e.g. `de` for German) |
 | **Ignore players** | Player names whose messages are skipped |
+| **Compact mode** | Enable single-line scrolling ticker instead of the full overlay |
+| **Ticker speed** | Scrolling speed in the compact mode (px/frame at 60 fps) |
+| **HUD opacity** | Overlay transparency from 20 % (nearly invisible) to 100 % (opaque) |
 | **API URL** | Chat completions endpoint (default: OpenAI; customisable for local models) |
 | **Model** | LLM model (locked to `gpt-4.1-nano` for the official OpenAI URL; free text for custom endpoints) |
 | **Temperature** | LLM temperature — lower values produce more literal translations |
-| **API key** | Your OpenAI API key (masked; toggle visibility with the checkbox) |
-| **API key file** | Path to a text file containing the API key (used when the key field is empty) |
+| **API key** | Your OpenAI API key (masked; toggle visibility with the eye icon) |
 | **console.log path** | Path to the CS2 log file |
 | **Poll interval (ms)** | How often the log file is checked for new lines |
 
