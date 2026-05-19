@@ -153,6 +153,7 @@ def main():
                 print(t("cfg.log_saved", path=CONFIG_FILENAME, log=cfg.get("log_path", "")))
             except Exception as e:
                 print(t("cfg.save_fail", err=e))
+            hud.set_compact(bool(new_cfg.get("compact_mode", False)))
         open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR)
 
     hud = TkHud(
@@ -160,6 +161,7 @@ def main():
         geometry=cfg.get("hud_geometry"),
         on_geometry_change=save_geometry,
         on_settings=open_settings_dialog,
+        compact_mode=bool(cfg.get("compact_mode", False)),
     )
 
     class _HudStream:

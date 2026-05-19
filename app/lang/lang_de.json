@@ -58,6 +58,7 @@
   "settings.field.api_key": "API-Schlüssel",
   "settings.field.api_key_file": "API-Schlüssel-Datei",
   "settings.field.log_path": "Pfad zur console.log",
+  "settings.field.compact_mode": "Kompaktmodus (Laufband)",
   "settings.field.poll_interval": "Abfrageintervall (ms)",
   "settings.model.fixed": "(fest)",
   "settings.btn.save": "Speichern",

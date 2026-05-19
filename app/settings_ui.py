@@ -92,7 +92,9 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         snap = dict(cfg)
         snap["gpt_api"] = _get_api_url()
         for k, w in entries.items():
-            if isinstance(w, tk.StringVar):
+            if isinstance(w, tk.BooleanVar):
+                snap[k] = w.get()
+            elif isinstance(w, tk.StringVar):
                 val = w.get()
                 if k in ("no_translate_langs", "ignore_names"):
                     snap[k] = [x.strip() for x in val.split(",") if x.strip()]
@@ -235,6 +237,20 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
             _eye.config(fg=FG_ACCENT if _vis[0] else "#444444")
         eye.bind("<Button-1>", _toggle)
 
+    def field_check(key, label):
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+        var = tk.BooleanVar(value=bool(cfg.get(key, False)))
+        entries[key] = var
+        tk.Checkbutton(
+            row, variable=var,
+            bg=BG, fg=FG_VALUE, selectcolor="#1a1a1a",
+            activebackground=BG, activeforeground=FG_VALUE,
+            font=FONT,
+        ).pack(side="left")
+
     def field_multicheck(key, label):
         current = cfg.get(key, [])
         if isinstance(current, str):
@@ -300,6 +316,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     field_target_lang("target_lang", t("settings.field.target_lang"))
     field_multicheck("no_translate_langs", t("settings.field.skip_langs"))
     field("ignore_names",         t("settings.field.ignore_players"),   width=40)
+    field_check("compact_mode",   t("settings.field.compact_mode"))
 
     section(t("settings.section.llm"))
 
@@ -367,6 +384,9 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         if not new_cfg["gpt_api"]:
             new_cfg["gpt_model"] = "gpt-4.1-nano"
         for key, widget in entries.items():
+            if isinstance(widget, tk.BooleanVar):
+                new_cfg[key] = widget.get()
+                continue
             if isinstance(widget, tk.StringVar):
                 val = widget.get()
                 if key in ("no_translate_langs", "ignore_names"):

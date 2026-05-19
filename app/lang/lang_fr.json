@@ -58,6 +58,7 @@
   "settings.field.api_key": "Clé API",
   "settings.field.api_key_file": "Fichier clé API",
   "settings.field.log_path": "Chemin console.log",
+  "settings.field.compact_mode": "Mode compact (défilant)",
   "settings.field.poll_interval": "Intervalle (ms)",
   "settings.model.fixed": "(fixe)",
   "settings.btn.save": "Enregistrer",

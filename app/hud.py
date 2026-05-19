@@ -1,5 +1,6 @@
 
 import os
+import re
 import tkinter as tk
 from queue import Empty
 
@@ -14,14 +15,23 @@ class TkHud:
         "lang": "#7adfff",
     }
 
+    _TICKER_MS = 30
+    _TICKER_PX = 2
+    _TICKER_GAP = 60
+
     def __init__(self, queue, alpha: float = 0.75, font="Consolas 11",
-                 geometry: str = None, on_geometry_change=None, on_settings=None):
+                 geometry: str = None, on_geometry_change=None, on_settings=None,
+                 compact_mode: bool = False):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
         self._line_count = 0
-        self._stream_marks: dict = {}   # id → mark name (placed at LINE START)
+        self._stream_marks: dict = {}
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
+        self._font = font
+        self._compact = False
+        self._ticker_active = False
+        self._normal_geometry: str | None = None
 
         self.root = tk.Tk()
         self.root.title("CS2 Chat HUD")
@@ -72,9 +82,9 @@ class TkHud:
 
         # Resize handle must be packed before the expanding text widget so it
         # actually gets allocated space at the bottom-right corner.
-        resize_handle = tk.Frame(frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
-        resize_handle.pack(side="bottom", anchor="se")
-        resize_handle.pack_propagate(False)
+        self._resize_handle = tk.Frame(frame, bg="#1a1a1a", cursor="size_nw_se", width=16, height=16)
+        self._resize_handle.pack(side="bottom", anchor="se")
+        self._resize_handle.pack_propagate(False)
 
         self.text = tk.Text(
             frame,
@@ -92,13 +102,20 @@ class TkHud:
         self.text.bind("<MouseWheel>", self._on_mousewheel)
         self.text.bind("<Button-4>", lambda e: self.text.yview_scroll(-1, "units"))
         self.text.bind("<Button-5>", lambda e: self.text.yview_scroll(1, "units"))
-        resize_handle.bind("<Button-1>", self._resize_start)
-        resize_handle.bind("<B1-Motion>", self._resize_move)
-        resize_handle.bind("<ButtonRelease-1>", self._resize_end)
+        self._resize_handle.bind("<Button-1>", self._resize_start)
+        self._resize_handle.bind("<B1-Motion>", self._resize_move)
+        self._resize_handle.bind("<ButtonRelease-1>", self._resize_end)
+
+        self._ticker_canvas = tk.Canvas(
+            frame, bg="black", height=26, bd=0, highlightthickness=0,
+        )
+        # Not packed here — set_compact() controls visibility
 
         self._poll()
         if os.name == "nt":
             self.root.after(100, self._round_corners)
+        if compact_mode:
+            self.root.after(50, lambda: self.set_compact(True))
 
     # ── resize handle ────────────────────────────────────────────────────────
 
@@ -140,6 +157,83 @@ class TkHud:
         except Exception:
             pass
 
+    # ── compact / ticker mode ─────────────────────────────────────────────────
+
+    def set_compact(self, enabled: bool):
+        if self._compact == enabled:
+            return
+        self._compact = enabled
+        if enabled:
+            self._normal_geometry = self.root.geometry()
+            self.text.pack_forget()
+            self._resize_handle.pack_forget()
+            self._ticker_canvas.pack(fill="x", padx=8, pady=6)
+            self._ticker_active = True
+            self.root.update_idletasks()
+            compact_h = self.root.winfo_reqheight()
+            m = re.match(r'\d+x\d+([+-]\d+[+-]\d+)', self.root.geometry())
+            pos = m.group(1) if m else "+40+720"
+            w = self.root.winfo_width() or 800
+            self.root.geometry(f"{w}x{compact_h}{pos}")
+            self.root.after(self._TICKER_MS, self._ticker_tick)
+        else:
+            self._ticker_active = False
+            self._ticker_canvas.pack_forget()
+            self._ticker_canvas.delete("all")
+            self._resize_handle.pack(side="bottom", anchor="se")
+            self.text.pack(fill="both", expand=True, padx=8, pady=4)
+            if self._normal_geometry:
+                self.root.geometry(self._normal_geometry)
+        self.root.after(30, self._round_corners)
+
+    def _ticker_tick(self):
+        if not self._ticker_active:
+            return
+        self._ticker_canvas.move("ticker", -self._TICKER_PX, 0)
+        for item in self._ticker_canvas.find_withtag("ticker"):
+            try:
+                bbox = self._ticker_canvas.bbox(item)
+                if bbox and bbox[2] < 0:
+                    self._ticker_canvas.delete(item)
+            except Exception:
+                pass
+        self.root.after(self._TICKER_MS, self._ticker_tick)
+
+    def _ticker_add(self, dt: str, scope: str, name: str, msg: str,
+                    orig: str = "", lang: str = ""):
+        canvas = self._ticker_canvas
+        cw = canvas.winfo_width()
+        if cw <= 1:
+            cw = 800
+        rightmost = cw
+        for item in canvas.find_withtag("ticker"):
+            bbox = canvas.bbox(item)
+            if bbox:
+                rightmost = max(rightmost, bbox[2])
+        x = max(cw, rightmost + self._TICKER_GAP)
+        ch = canvas.winfo_height()
+        y = (ch // 2) if ch > 1 else 13
+
+        def put(text: str, color: str):
+            nonlocal x
+            item = canvas.create_text(
+                x, y, text=text, fill=color, font=self._font,
+                anchor="w", tags=("ticker",),
+            )
+            bb = canvas.bbox(item)
+            if bb:
+                x = bb[2]
+
+        put(dt + "  ", self.COLORS["dt"])
+        put(f"[{scope}] ", self.COLORS["scope"])
+        put(name + ": ", self.COLORS["name"])
+        if orig and lang:
+            put(f"[{lang}] ", self.COLORS["lang"])
+            put(orig + "  →  ", self.COLORS["meta"])
+        elif orig:
+            put(orig + "  →  ", self.COLORS["meta"])
+        put(msg, self.COLORS["msg"])
+
     # ── window drag ──────────────────────────────────────────────────────────
 
     def _cycle_alpha(self):
@@ -159,7 +253,7 @@ class TkHud:
         self.root.geometry(f"+{x}+{y}")
 
     def _on_release(self, event):
-        if self.on_geometry_change:
+        if not self._compact and self.on_geometry_change:
             self.on_geometry_change(self.root.geometry())
 
     def _on_mousewheel(self, event):
@@ -197,6 +291,8 @@ class TkHud:
         self.root.after(33, self._poll)
 
     def _append_line(self, line: str, tag="meta"):
+        if self._compact:
+            return
         self.text.configure(state="normal")
         self.text.insert("end", line.rstrip() + "\n", (tag,))
         self._line_count += 1
@@ -206,6 +302,9 @@ class TkHud:
 
     def _append_struct(self, dt: str, scope: str, name: str, msg: str,
                        orig: str = "", lang: str = ""):
+        if self._compact:
+            self._ticker_add(dt, scope, name, msg, orig, lang)
+            return
         self.text.configure(state="normal")
         self.text.insert("end", dt + "  ", ("dt",))
         self.text.insert("end", f"[{scope}] ", ("scope",))

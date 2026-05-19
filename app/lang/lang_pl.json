@@ -58,6 +58,7 @@
   "settings.field.api_key": "Klucz API",
   "settings.field.api_key_file": "Plik klucza API",
   "settings.field.log_path": "Ścieżka console.log",
+  "settings.field.compact_mode": "Tryb kompaktowy (pasek)",
   "settings.field.poll_interval": "Interwał odpytywania (ms)",
   "settings.model.fixed": "(stały)",
   "settings.btn.save": "Zapisz",
