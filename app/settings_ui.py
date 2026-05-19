@@ -1,7 +1,24 @@
+import os
 import tkinter as tk
 from tkinter import filedialog, ttk
 from app.i18n import t
 from app.config import DEFAULT_API_URL
+
+
+def _apply_round_region(win, radius: int = 50) -> None:
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        hwnd = ctypes.windll.user32.GetParent(win.winfo_id())
+        if not hwnd:
+            hwnd = win.winfo_id()
+        w, h = win.winfo_width(), win.winfo_height()
+        if w > 1 and h > 1:
+            hrgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, radius * 2, radius * 2)
+            ctypes.windll.user32.SetWindowRgn(hwnd, hrgn, True)
+    except Exception:
+        pass
 
 BG = "black"
 FG_ACCENT = "#7adfff"
@@ -386,3 +403,4 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     _make_btn(btn_bar, t("settings.btn.save"), _save).pack(side="right")
 
     win.bind("<Escape>", lambda e: win.destroy())
+    win.after(100, lambda: _apply_round_region(win))

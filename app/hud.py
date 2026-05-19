@@ -97,6 +97,8 @@ class TkHud:
         resize_handle.bind("<ButtonRelease-1>", self._resize_end)
 
         self._poll()
+        if os.name == "nt":
+            self.root.after(100, self._round_corners)
 
     # ── resize handle ────────────────────────────────────────────────────────
 
@@ -118,7 +120,25 @@ class TkHud:
     def _resize_end(self, event):
         if self.on_geometry_change:
             self.on_geometry_change(self.root.geometry())
+        self._round_corners()
         return "break"
+
+    # ── rounded corners ──────────────────────────────────────────────────────
+
+    def _round_corners(self, radius: int = 50):
+        if os.name != "nt":
+            return
+        try:
+            import ctypes
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            if not hwnd:
+                hwnd = self.root.winfo_id()
+            w, h = self.root.winfo_width(), self.root.winfo_height()
+            if w > 1 and h > 1:
+                hrgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, radius * 2, radius * 2)
+                ctypes.windll.user32.SetWindowRgn(hwnd, hrgn, True)
+        except Exception:
+            pass
 
     # ── window drag ──────────────────────────────────────────────────────────
 
