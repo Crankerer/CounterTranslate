@@ -155,6 +155,7 @@ class TkHud:
         nw = max(300, self._resize["w"] + dw)
         nh = max(120, self._resize["h"] + dh)
         self.root.geometry(f"{nw}x{nh}")
+        self._round_corners()
         return "break"
 
     def _resize_end(self, event):
