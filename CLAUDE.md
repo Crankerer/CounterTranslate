@@ -71,7 +71,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\ga
 |-----|--------|
 | `Escape` | Close the HUD |
 | `F1` | Toggle HUD visibility |
-| `F2` | Cycle transparency: three steps — `< 0.8 → 0.9`, `[0.8–0.9) → 0.6`, `≥ 0.9 → 0.75`. Starting at 0.72: first press → 0.9 → 0.75 → 0.9 → … |
+| `F2` | Cycle transparency: five steps — 1.0 → 0.8 → 0.6 → 0.4 → 0.2 → 1.0 (0 % to 80 % transparent). Finds nearest step and advances to next. |
 
 ## HUD Queue Protocol
 

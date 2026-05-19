@@ -290,10 +290,12 @@ class TkHud:
 
     # ── window drag ──────────────────────────────────────────────────────────
 
+    _ALPHA_STEPS = (1.0, 0.8, 0.6, 0.4, 0.2)
+
     def _cycle_alpha(self):
         cur = float(self.root.attributes("-alpha"))
-        next_alpha = 0.9 if cur < 0.8 else 0.6 if cur < 0.9 else 0.75
-        self.root.attributes("-alpha", next_alpha)
+        idx = min(range(len(self._ALPHA_STEPS)), key=lambda i: abs(self._ALPHA_STEPS[i] - cur))
+        self.root.attributes("-alpha", self._ALPHA_STEPS[(idx + 1) % len(self._ALPHA_STEPS)])
 
     def _toggle_visible(self, *_):
         self.visible = not self.visible
