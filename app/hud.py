@@ -211,6 +211,7 @@ class TkHud:
                 self.root.geometry(self._normal_geometry)
             self.root.update_idletasks()
             self._round_corners()
+            self.text.see("end")
 
     def set_ticker_speed(self, px: int):
         self._ticker_px = max(1, px)
@@ -328,20 +329,20 @@ class TkHud:
         self.root.after(33, self._poll)
 
     def _append_line(self, line: str, tag="meta"):
-        if self._compact:
-            return
         self.text.configure(state="normal")
         self.text.insert("end", line.rstrip() + "\n", (tag,))
         self._line_count += 1
         self._trim_if_needed()
-        self.text.see("end")
+        if not self._compact:
+            self.text.see("end")
         self.text.configure(state="disabled")
 
     def _append_struct(self, dt: str, scope: str, name: str, msg: str,
                        orig: str = "", lang: str = ""):
         if self._compact:
             self._ticker_add(dt, scope, name, msg, orig, lang)
-            return
+        # Always write to text widget too — it's just hidden in compact mode,
+        # so content is fully preserved when switching back to normal mode.
         self.text.configure(state="normal")
         self.text.insert("end", dt + "  ", ("dt",))
         self.text.insert("end", f"[{scope}] ", ("scope",))
@@ -356,7 +357,8 @@ class TkHud:
             self.text.insert("end", orig + "\n", ("meta",))
             self._line_count += 1
             self._trim_if_needed()
-        self.text.see("end")
+        if not self._compact:
+            self.text.see("end")
         self.text.configure(state="disabled")
 
     # ── streaming ────────────────────────────────────────────────────────────
