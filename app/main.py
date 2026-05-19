@@ -143,6 +143,13 @@ def main():
         except Exception:
             pass
 
+    def save_font(font_str: str):
+        cfg["hud_font"] = font_str
+        try:
+            save_config(CONFIG_FILENAME, cfg)
+        except Exception:
+            pass
+
     def open_settings_dialog():
         nonlocal cfg
         def on_save(new_cfg):
@@ -158,9 +165,10 @@ def main():
         open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR)
 
     hud = TkHud(
-        q, alpha=0.72, font="Consolas 11",
+        q, alpha=0.72, font=cfg.get("hud_font", "Consolas 11"),
         geometry=cfg.get("hud_geometry"),
         on_geometry_change=save_geometry,
+        on_font_change=save_font,
         on_settings=open_settings_dialog,
         compact_mode=bool(cfg.get("compact_mode", False)),
         ticker_speed=int(cfg.get("ticker_speed", 2)),

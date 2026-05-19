@@ -22,10 +22,11 @@ class TkHud:
 
     def __init__(self, queue, alpha: float = 0.75, font="Consolas 11",
                  geometry: str = None, on_geometry_change=None, on_settings=None,
-                 compact_mode: bool = False, ticker_speed: int = 2):
+                 on_font_change=None, compact_mode: bool = False, ticker_speed: int = 2):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
+        self.on_font_change = on_font_change
         self._line_count = 0
         self._stream_marks: dict = {}
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
@@ -325,6 +326,8 @@ class TkHud:
         size = max(7, min(size, 28))
         self._font = f"{family} {size}"
         self.text.configure(font=self._font)
+        if self.on_font_change:
+            self.on_font_change(self._font)
         return "break"
 
     # ── text management ──────────────────────────────────────────────────────
