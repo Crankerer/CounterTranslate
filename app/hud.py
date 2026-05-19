@@ -1,6 +1,7 @@
 
 import os
 import re
+import time
 import tkinter as tk
 from queue import Empty
 
@@ -21,7 +22,7 @@ class TkHud:
 
     def __init__(self, queue, alpha: float = 0.75, font="Consolas 11",
                  geometry: str = None, on_geometry_change=None, on_settings=None,
-                 compact_mode: bool = False, ticker_speed: int = 6):
+                 compact_mode: bool = False, ticker_speed: int = 2):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
@@ -32,6 +33,8 @@ class TkHud:
         self._compact = False
         self._ticker_active = False
         self._ticker_px = max(1, ticker_speed)
+        self._ticker_last_t = 0.0
+        self._ticker_accum = 0.0
         self._normal_geometry: str | None = None
 
         self.root = tk.Tk()
@@ -189,6 +192,8 @@ class TkHud:
             self._normal_frame.pack_forget()
             self._compact_frame.pack(fill="both", expand=True)
             self._ticker_active = True
+            self._ticker_last_t = time.monotonic()
+            self._ticker_accum = 0.0
             m = re.match(r'\d+x\d+([+-]\d+[+-]\d+)', self.root.geometry())
             pos = m.group(1) if m else "+40+720"
             w = self.root.winfo_width() or 800
@@ -212,14 +217,22 @@ class TkHud:
     def _ticker_tick(self):
         if not self._ticker_active:
             return
-        self._ticker_canvas.move("ticker", -self._ticker_px, 0)
-        for item in self._ticker_canvas.find_withtag("ticker"):
-            try:
-                bbox = self._ticker_canvas.bbox(item)
-                if bbox and bbox[2] < 0:
-                    self._ticker_canvas.delete(item)
-            except Exception:
-                pass
+        now = time.monotonic()
+        elapsed = now - self._ticker_last_t
+        self._ticker_last_t = now
+        # _ticker_px is "pixels per frame at 60 fps" → convert to px/s
+        self._ticker_accum += self._ticker_px * 60.0 * elapsed
+        dx = int(self._ticker_accum)
+        self._ticker_accum -= dx
+        if dx:
+            self._ticker_canvas.move("ticker", -dx, 0)
+            for item in self._ticker_canvas.find_withtag("ticker"):
+                try:
+                    bbox = self._ticker_canvas.bbox(item)
+                    if bbox and bbox[2] < 0:
+                        self._ticker_canvas.delete(item)
+                except Exception:
+                    pass
         self.root.after(self._TICKER_MS, self._ticker_tick)
 
     def _ticker_add(self, dt: str, scope: str, name: str, msg: str,

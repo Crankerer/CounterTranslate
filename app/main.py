@@ -154,7 +154,7 @@ def main():
             except Exception as e:
                 print(t("cfg.save_fail", err=e))
             hud.set_compact(bool(new_cfg.get("compact_mode", False)))
-            hud.set_ticker_speed(int(new_cfg.get("ticker_speed", 6)))
+            hud.set_ticker_speed(int(new_cfg.get("ticker_speed", 2)))
         open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR)
 
     hud = TkHud(
@@ -163,7 +163,7 @@ def main():
         on_geometry_change=save_geometry,
         on_settings=open_settings_dialog,
         compact_mode=bool(cfg.get("compact_mode", False)),
-        ticker_speed=int(cfg.get("ticker_speed", 6)),
+        ticker_speed=int(cfg.get("ticker_speed", 2)),
     )
 
     class _HudStream:
