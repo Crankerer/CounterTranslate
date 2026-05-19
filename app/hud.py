@@ -15,7 +15,7 @@ class TkHud:
         "lang": "#7adfff",
     }
 
-    _TICKER_MS = 30
+    _TICKER_MS = 16
     _TICKER_GAP = 60
     _COMPACT_H = 26
 
