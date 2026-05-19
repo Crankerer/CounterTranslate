@@ -112,6 +112,7 @@ class TkHud:
             self.text.tag_configure(tag, foreground=color)
 
         self.text.bind("<MouseWheel>", self._on_mousewheel)
+        self.text.bind("<Control-MouseWheel>", self._on_ctrl_mousewheel)
         self.text.bind("<Button-4>", lambda e: self.text.yview_scroll(-1, "units"))
         self.text.bind("<Button-5>", lambda e: self.text.yview_scroll(1, "units"))
         self._resize_handle.bind("<Button-1>", self._resize_start)
@@ -312,6 +313,19 @@ class TkHud:
     def _on_mousewheel(self, event):
         delta = -1 if event.delta > 0 else 1
         self.text.yview_scroll(delta, "units")
+
+    def _on_ctrl_mousewheel(self, event):
+        parts = self._font.rsplit(" ", 1)
+        family = parts[0] if len(parts) == 2 else "Consolas"
+        try:
+            size = int(parts[-1])
+        except ValueError:
+            size = 11
+        size += 1 if event.delta > 0 else -1
+        size = max(7, min(size, 28))
+        self._font = f"{family} {size}"
+        self.text.configure(font=self._font)
+        return "break"
 
     # ── text management ──────────────────────────────────────────────────────
 
