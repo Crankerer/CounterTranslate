@@ -62,6 +62,7 @@
   "settings.field.ticker_speed": "Vitesse du défilant (px/image)",
   "settings.field.hud_alpha": "Opacité HUD (%)",
   "settings.field.poll_interval": "Intervalle (ms)",
+  "settings.field.show_status_dot": "Afficher le point de statut dans le HUD",
   "settings.model.fixed": "(fixe)",
   "settings.btn.save": "Enregistrer",
   "settings.btn.cancel": "Annuler",

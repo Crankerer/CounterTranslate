@@ -62,6 +62,7 @@
   "settings.field.ticker_speed": "Prędkość paska (px/klatka)",
   "settings.field.hud_alpha": "Krycie HUD (%)",
   "settings.field.poll_interval": "Interwał odpytywania (ms)",
+  "settings.field.show_status_dot": "Pokaż wskaźnik statusu w HUD",
   "settings.model.fixed": "(stały)",
   "settings.btn.save": "Zapisz",
   "settings.btn.cancel": "Anuluj",

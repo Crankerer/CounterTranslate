@@ -31,7 +31,8 @@ FONT_BOLD = ("Consolas", 10, "bold")
 FONT_SMALL = ("Consolas", 9)
 
 
-def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_dir: str = "", alpha_var=None):
+def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_dir: str = "",
+                  alpha_var=None, status_color: str = "", status_tooltip: str = ""):
     win = tk.Toplevel(parent_root)
     win.overrideredirect(True)
     win.configure(bg=BG)
@@ -115,7 +116,8 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                 else:
                     snap[k] = raw
         win.destroy()
-        open_settings(parent_root, snap, config_path, on_save=on_save, base_dir=base_dir, alpha_var=alpha_var)
+        open_settings(parent_root, snap, config_path, on_save=on_save, base_dir=base_dir,
+                      alpha_var=alpha_var, status_color=status_color, status_tooltip=status_tooltip)
 
     # ── field helpers ─────────────────────────────────────────────────────────
     def section(text):
@@ -357,6 +359,42 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     field_check("compact_mode",   t("settings.field.compact_mode"))
     field("ticker_speed",         t("settings.field.ticker_speed"),      width=6)
     field_slider("hud_alpha",     t("settings.field.hud_alpha"), shared_var=alpha_var)
+
+    # ── proxy status display ──────────────────────────────────────────────────
+    _s_fills = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444"}
+    _s_texts = {"green": "ok", "yellow": "degraded", "red": "unreachable"}
+    s_row = tk.Frame(body, bg=BG)
+    s_row.pack(fill="x", pady=(4, 0))
+    tk.Label(s_row, text="Proxy-Status:", fg=FG_LABEL, bg=BG,
+             font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+    _sc = tk.Canvas(s_row, width=14, height=14, bg=BG, bd=0, highlightthickness=0)
+    _sc.pack(side="left", padx=(0, 6))
+    _sd = _sc.create_oval(2, 2, 12, 12, fill=_s_fills.get(status_color, "#555555"), outline="")
+    tk.Label(s_row, text=_s_texts.get(status_color, "checking…"),
+             fg=FG_VALUE, bg=BG, font=FONT_SMALL).pack(side="left")
+
+    _s_tip = [None]
+    def _s_show(event):
+        if not status_tooltip or _s_tip[0]:
+            return
+        x, y = win.winfo_pointerx() + 14, win.winfo_pointery() + 14
+        tw = tk.Toplevel(win)
+        tw.overrideredirect(True)
+        tw.wm_attributes("-topmost", True)
+        tw.configure(bg="#1e1e1e")
+        tk.Label(tw, text=status_tooltip, bg="#1e1e1e", fg="#e0e0e0",
+                 font=("Consolas", 9), justify="left", padx=10, pady=7).pack()
+        tw.geometry(f"+{x}+{y}")
+        _s_tip[0] = tw
+    def _s_hide(event=None):
+        if _s_tip[0]:
+            _s_tip[0].destroy()
+            _s_tip[0] = None
+    _sc.bind("<Enter>", _s_show)
+    _sc.bind("<Leave>", _s_hide)
+    win.bind("<Destroy>", _s_hide, "+")
+
+    field_check("show_status_dot", t("settings.field.show_status_dot"))
 
     section(t("settings.section.llm"))
 

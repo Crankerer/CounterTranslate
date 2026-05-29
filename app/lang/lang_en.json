@@ -62,6 +62,7 @@
   "settings.field.ticker_speed": "Ticker speed (px/frame)",
   "settings.field.hud_alpha": "HUD opacity (%)",
   "settings.field.poll_interval": "Poll interval (ms)",
+  "settings.field.show_status_dot": "Show status dot in HUD",
   "settings.model.fixed": "(fixed)",
   "settings.btn.save": "Save",
   "settings.btn.cancel": "Cancel",

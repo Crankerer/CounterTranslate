@@ -23,7 +23,8 @@ class TkHud:
     def __init__(self, queue, alpha: float = 0.75, font="Consolas 11",
                  geometry: str = None, on_geometry_change=None, on_settings=None,
                  on_font_change=None, on_alpha_change=None,
-                 compact_mode: bool = False, ticker_speed: int = 2):
+                 compact_mode: bool = False, ticker_speed: int = 2,
+                 show_status_dot: bool = True):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
@@ -39,6 +40,8 @@ class TkHud:
         self._ticker_last_t = 0.0
         self._ticker_accum = 0.0
         self._normal_geometry: str | None = None
+        self._status_color: str = ""
+        self._status_setting_enabled: bool = show_status_dot
 
         self.root = tk.Tk()
         self.root.title("CS2 Chat HUD")
@@ -90,6 +93,9 @@ class TkHud:
         topbar = tk.Frame(self._normal_frame, bg="black")
         topbar.pack(fill="x", side="top")
 
+        self._tooltip_win = None
+        self._tooltip_text = ""
+
         self._status_canvas_n = tk.Canvas(
             topbar, width=14, height=14, bg="black", bd=0, highlightthickness=0,
         )
@@ -97,6 +103,8 @@ class TkHud:
         self._status_dot_n = self._status_canvas_n.create_oval(
             2, 2, 12, 12, fill="#555555", outline="",
         )
+        self._status_canvas_n.bind("<Enter>", self._tooltip_show)
+        self._status_canvas_n.bind("<Leave>", self._tooltip_hide)
 
         close_btn = tk.Label(topbar, text="✕", fg="#ff6666", bg="black",
                              font=("Consolas", 12, "bold"), cursor="hand2")
@@ -155,6 +163,8 @@ class TkHud:
         self._status_dot_c = self._status_canvas_c.create_oval(
             2, 2, 12, 12, fill="#555555", outline="",
         )
+        self._status_canvas_c.bind("<Enter>", self._tooltip_show)
+        self._status_canvas_c.bind("<Leave>", self._tooltip_hide)
 
         self._ticker_canvas = tk.Canvas(
             self._compact_frame, bg="black", bd=0, highlightthickness=0,
@@ -287,15 +297,55 @@ class TkHud:
 
     _STATUS_FILLS = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444"}
 
-    def set_status_color(self, color: str):
+    def set_status_color(self, color: str, tooltip: str = ""):
         fill = self._STATUS_FILLS.get(color, "#555555")
         def _apply():
+            self._status_color = color
             self._status_canvas_n.itemconfig(self._status_dot_n, fill=fill)
             self._status_canvas_c.itemconfig(self._status_dot_c, fill=fill)
+            self._tooltip_text = tooltip
+            self._update_dot_visibility()
         try:
             self.root.after(0, _apply)
         except Exception:
             pass
+
+    def set_status_visible(self, enabled: bool):
+        self._status_setting_enabled = enabled
+        try:
+            self.root.after(0, self._update_dot_visibility)
+        except Exception:
+            pass
+
+    def _update_dot_visibility(self):
+        force_show = self._status_color in ("yellow", "red")
+        show = force_show or self._status_setting_enabled
+        state = "normal" if show else "hidden"
+        self._status_canvas_n.itemconfig(self._status_dot_n, state=state)
+        self._status_canvas_c.itemconfig(self._status_dot_c, state=state)
+
+    def _tooltip_show(self, event):
+        if not self._tooltip_text or self._tooltip_win:
+            return
+        x = self.root.winfo_pointerx() + 14
+        y = self.root.winfo_pointery() + 14
+        win = tk.Toplevel(self.root)
+        win.overrideredirect(True)
+        win.wm_attributes("-topmost", True)
+        win.configure(bg="#1e1e1e")
+        tk.Label(
+            win, text=self._tooltip_text,
+            bg="#1e1e1e", fg="#e0e0e0",
+            font=("Consolas", 9), justify="left",
+            padx=10, pady=7,
+        ).pack()
+        win.geometry(f"+{x}+{y}")
+        self._tooltip_win = win
+
+    def _tooltip_hide(self, event):
+        if self._tooltip_win:
+            self._tooltip_win.destroy()
+            self._tooltip_win = None
 
     def _ticker_tick(self):
         if not self._ticker_active:

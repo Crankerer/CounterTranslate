@@ -62,6 +62,7 @@
   "settings.field.ticker_speed": "Скорость строки (пкс/кадр)",
   "settings.field.hud_alpha": "Непрозрачность HUD (%)",
   "settings.field.poll_interval": "Интервал опроса (мс)",
+  "settings.field.show_status_dot": "Показывать индикатор статуса в HUD",
   "settings.model.fixed": "(фиксирован)",
   "settings.btn.save": "Сохранить",
   "settings.btn.cancel": "Отмена",

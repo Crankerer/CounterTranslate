@@ -157,10 +157,17 @@ def main():
         on_font_change=save_font,
         compact_mode=bool(cfg.get("compact_mode", False)),
         ticker_speed=int(cfg.get("ticker_speed", 2)),
+        show_status_dot=bool(cfg.get("show_status_dot", True)),
     )
 
+    _status = {"color": "", "tooltip": ""}
+    def _on_status(color, tooltip):
+        _status["color"] = color
+        _status["tooltip"] = tooltip
+        hud.set_status_color(color, tooltip)
+
     from app import status_checker as _sc
-    _sc.start(hud.set_status_color)
+    _sc.start(_on_status)
 
     import tkinter as _tk
     _alpha_var = _tk.IntVar(master=hud.root,
@@ -191,8 +198,10 @@ def main():
             new_alpha = float(new_cfg.get("hud_alpha", 0.72))
             hud.root.attributes("-alpha", new_alpha)
             _alpha_var.set(int(round(new_alpha * 100)))
+            hud.set_status_visible(bool(new_cfg.get("show_status_dot", True)))
         open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR,
-                      alpha_var=_alpha_var)
+                      alpha_var=_alpha_var, status_color=_status["color"],
+                      status_tooltip=_status["tooltip"])
 
     hud.on_settings = open_settings_dialog
 

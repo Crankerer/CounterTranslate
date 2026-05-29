@@ -17,7 +17,8 @@ DEFAULTS = {
     "lang": "en",
     "compact_mode": False,
     "ticker_speed": 2,
-    "hud_alpha": 0.72
+    "hud_alpha": 0.72,
+    "show_status_dot": True
 }
 
 

@@ -62,6 +62,7 @@
   "settings.field.ticker_speed": "Ticker-Geschwindigkeit (px/Frame)",
   "settings.field.hud_alpha": "HUD-Deckkraft (%)",
   "settings.field.poll_interval": "Abfrageintervall (ms)",
+  "settings.field.show_status_dot": "Statuspunkt im HUD anzeigen",
   "settings.model.fixed": "(fest)",
   "settings.btn.save": "Speichern",
   "settings.btn.cancel": "Abbrechen",
