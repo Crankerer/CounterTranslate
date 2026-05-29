@@ -4,7 +4,7 @@ import requests
 
 _STATUS_URL = "https://crimson-dog-44043.zap.cloud/status"
 _TIMEOUT = 8
-_INTERVAL = 60
+_INTERVAL = 300
 
 
 def _check() -> str:
