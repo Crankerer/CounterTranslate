@@ -90,6 +90,14 @@ class TkHud:
         topbar = tk.Frame(self._normal_frame, bg="black")
         topbar.pack(fill="x", side="top")
 
+        self._status_canvas_n = tk.Canvas(
+            topbar, width=14, height=14, bg="black", bd=0, highlightthickness=0,
+        )
+        self._status_canvas_n.pack(side="left", padx=(6, 0), pady=2)
+        self._status_dot_n = self._status_canvas_n.create_oval(
+            2, 2, 12, 12, fill="#555555", outline="",
+        )
+
         close_btn = tk.Label(topbar, text="✕", fg="#ff6666", bg="black",
                              font=("Consolas", 12, "bold"), cursor="hand2")
         close_btn.pack(side="right", padx=4, pady=2)
@@ -140,10 +148,18 @@ class TkHud:
         self._compact_frame = tk.Frame(frame, bg="black")
         # Not packed initially; set_compact() controls visibility
 
+        self._status_canvas_c = tk.Canvas(
+            self._compact_frame, width=14, height=14, bg="black", bd=0, highlightthickness=0,
+        )
+        self._status_canvas_c.pack(side="left", padx=(6, 2), pady=3)
+        self._status_dot_c = self._status_canvas_c.create_oval(
+            2, 2, 12, 12, fill="#555555", outline="",
+        )
+
         self._ticker_canvas = tk.Canvas(
             self._compact_frame, bg="black", bd=0, highlightthickness=0,
         )
-        self._ticker_canvas.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=3)
+        self._ticker_canvas.pack(side="left", fill="both", expand=True, padx=(0, 0), pady=3)
 
         _cc = tk.Label(self._compact_frame, text="✕", fg="#ff6666", bg="black",
                        font=("Consolas", 12, "bold"), cursor="hand2")
@@ -268,6 +284,18 @@ class TkHud:
 
     def set_ticker_speed(self, px: int):
         self._ticker_px = max(1, px)
+
+    _STATUS_FILLS = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444"}
+
+    def set_status_color(self, color: str):
+        fill = self._STATUS_FILLS.get(color, "#555555")
+        def _apply():
+            self._status_canvas_n.itemconfig(self._status_dot_n, fill=fill)
+            self._status_canvas_c.itemconfig(self._status_dot_c, fill=fill)
+        try:
+            self.root.after(0, _apply)
+        except Exception:
+            pass
 
     def _ticker_tick(self):
         if not self._ticker_active:

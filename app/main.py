@@ -159,6 +159,9 @@ def main():
         ticker_speed=int(cfg.get("ticker_speed", 2)),
     )
 
+    from app import status_checker as _sc
+    _sc.start(hud.set_status_color)
+
     import tkinter as _tk
     _alpha_var = _tk.IntVar(master=hud.root,
                             value=int(round(float(cfg.get("hud_alpha", 0.72)) * 100)))
