@@ -161,13 +161,26 @@ def main():
     )
 
     _status = {"color": "", "tooltip": ""}
+
+    def _custom_api_url():
+        return (cfg.get("gpt_api") or "").strip()
+
+    def _apply_status():
+        url = _custom_api_url()
+        if url:
+            hud.set_status_color("blue", f"Custom API:\n{url}")
+        else:
+            hud.set_status_color(_status["color"], _status["tooltip"])
+
     def _on_status(color, tooltip):
         _status["color"] = color
         _status["tooltip"] = tooltip
-        hud.set_status_color(color, tooltip)
+        _apply_status()
 
     from app import status_checker as _sc
     _sc.start(_on_status)
+    if _custom_api_url():
+        hud.set_status_color("blue", f"Custom API:\n{_custom_api_url()}")
 
     import tkinter as _tk
     _alpha_var = _tk.IntVar(master=hud.root,
@@ -199,6 +212,7 @@ def main():
             hud.root.attributes("-alpha", new_alpha)
             _alpha_var.set(int(round(new_alpha * 100)))
             hud.set_status_visible(bool(new_cfg.get("show_status_dot", True)))
+            _apply_status()
         open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR,
                       alpha_var=_alpha_var, status_color=_status["color"],
                       status_tooltip=_status["tooltip"])

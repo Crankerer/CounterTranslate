@@ -295,7 +295,7 @@ class TkHud:
     def set_ticker_speed(self, px: int):
         self._ticker_px = max(1, px)
 
-    _STATUS_FILLS = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444"}
+    _STATUS_FILLS = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444", "blue": "#4488ff"}
 
     def set_status_color(self, color: str, tooltip: str = ""):
         fill = self._STATUS_FILLS.get(color, "#555555")

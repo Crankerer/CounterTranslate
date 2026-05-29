@@ -361,8 +361,8 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     field_slider("hud_alpha",     t("settings.field.hud_alpha"), shared_var=alpha_var)
 
     # ── proxy status display ──────────────────────────────────────────────────
-    _s_fills = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444"}
-    _s_texts = {"green": "ok", "yellow": "degraded", "red": "unreachable"}
+    _s_fills = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444", "blue": "#4488ff"}
+    _s_texts = {"green": "ok", "yellow": "degraded", "red": "unreachable", "blue": "custom"}
     s_row = tk.Frame(body, bg=BG)
     s_row.pack(fill="x", pady=(4, 0))
     tk.Label(s_row, text="Proxy-Status:", fg=FG_LABEL, bg=BG,
