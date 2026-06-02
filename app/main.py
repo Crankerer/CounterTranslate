@@ -178,7 +178,7 @@ def main():
         _apply_status()
 
     from app import status_checker as _sc
-    _sc.start(_on_status)
+    _sc.start(_on_status, get_key=lambda: cfg.get("open_ai_api_key", ""))
     if _custom_api_url():
         hud.set_status_color("blue", f"Custom API:\n{_custom_api_url()}")
 
