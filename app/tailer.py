@@ -93,8 +93,8 @@ def start_tail_thread(
                                 f, st_prev = open_follow(current_log_path)
                                 last_inode = getattr(st_prev, "st_ino", None)
                                 print(ts(), t("tail.log_changed", path=current_log_path))
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        _log_setup.get().warning("[tailer] config reload failed: %s", e)
 
                 # --- Read new log data ---
                 chunk = f.read()
@@ -104,6 +104,7 @@ def start_tail_thread(
                     for dt, scope, name, orig_msg, endpos in iter_chat_entries(buffer):
                         last_end = endpos
                         if should_ignore(name, current_ignore):
+                            _log_setup.get().debug("[ignored] [%s] %s: %s", scope, name, orig_msg)
                             continue
 
                         stream_id = str(time.monotonic_ns())[-12:]
@@ -170,6 +171,7 @@ def start_tail_thread(
                     if last_end:
                         buffer = buffer[last_end:]
                     if len(buffer) > 2_000_000:
+                        _log_setup.get().warning("[tailer] buffer exceeded 2 MB, trimmed to 1 MB")
                         buffer = buffer[-1_000_000:]
 
                 else:

@@ -2,6 +2,7 @@ import json, os, re, sys, tempfile, subprocess, time, zipfile
 from urllib.request import Request, urlopen
 
 from app._build_version import CURRENT_VERSION
+from app import log_setup as _log_setup
 
 OWNER = "Crankerer"
 REPO = "CounterTranslate"
@@ -132,7 +133,7 @@ def _extract_update_from_zip(zip_path):
         app_name_lower = APP_EXE_NAME.lower()
         named = [m for m in exes if os.path.basename(m).lower() == app_name_lower]
         if not named:
-            print(f"[Updater] {APP_EXE_NAME} not found in ZIP. Found: {[os.path.basename(m) for m in exes]}")
+            _log_setup.get().warning("[Updater] %s not found in ZIP. Found: %s", APP_EXE_NAME, [os.path.basename(m) for m in exes])
             return None, None, None
         pick = named[0]
 
@@ -142,11 +143,11 @@ def _extract_update_from_zip(zip_path):
         out_dir = tempfile.mkdtemp()
         z.extractall(out_dir)
 
-        print(f"[Updater] {pick} found in ZIP")
+        _log_setup.get().debug("[Updater] %s found in ZIP", pick)
 
         new_exe = os.path.normpath(os.path.join(out_dir, pick))
 
-        print(f"[Updater] full path {new_exe}")
+        _log_setup.get().debug("[Updater] full path %s", new_exe)
 
         update_root = os.path.dirname(new_exe)
 
@@ -155,9 +156,9 @@ def _extract_update_from_zip(zip_path):
             if launcher_members else None
         )
         if new_launcher:
-            print(f"[Updater] Launcher found in ZIP: {launcher_members[0]}")
+            _log_setup.get().debug("[Updater] Launcher found in ZIP: %s", launcher_members[0])
         else:
-            print(f"[Updater] Launcher not found in ZIP.")
+            _log_setup.get().debug("[Updater] Launcher not found in ZIP")
 
         return update_root, new_exe, new_launcher
 
@@ -170,7 +171,7 @@ def maybe_update(prereleases=False):
 
         if isinstance(rel_data, list):
             if not rel_data:
-                print("[Updater] No releases found.")
+                _log_setup.get().info("[Updater] No releases found.")
                 return False
             if prereleases:
                 rel = rel_data[0]
@@ -183,21 +184,21 @@ def maybe_update(prereleases=False):
         elif isinstance(rel_data, dict):
             rel = rel_data
         else:
-            print(f"[Updater] Unexpected release type: {type(rel_data)}")
+            _log_setup.get().warning("[Updater] Unexpected release type: %s", type(rel_data))
             return False
 
         if not rel or rel.get("draft"):
-            print("[Updater] No valid release found.")
+            _log_setup.get().info("[Updater] No valid release found.")
             return False
 
         latest_version_str = rel.get("tag_name") or rel.get("name")
         latest_v = _parse_version(latest_version_str)
         current_v = _parse_version(CURRENT_VERSION)
 
-        print(f"[Updater] Local: {CURRENT_VERSION} | Remote: {latest_version_str}")
+        _log_setup.get().info("[Updater] Local: %s | Remote: %s", CURRENT_VERSION, latest_version_str)
 
         if latest_v <= current_v:
-            print("[Updater] Already up to date.")
+            _log_setup.get().info("[Updater] Already up to date.")
             return False
 
         # --- ask user ---
@@ -213,7 +214,7 @@ def maybe_update(prereleases=False):
         )
         _root.destroy()
         if not want:
-            print("[Updater] User declined update.")
+            _log_setup.get().info("[Updater] User declined update.")
             return False
 
         # --- update found: show UI from here on ---
@@ -269,13 +270,13 @@ def maybe_update(prereleases=False):
         if new_launcher and os.path.isfile(new_launcher):
             import shutil as _shutil2
             _shutil2.copy2(new_launcher, launcher_exe)
-            print(f"[Updater] Launcher updated: {launcher_exe}")
+            _log_setup.get().info("[Updater] Launcher updated: %s", launcher_exe)
 
         if not os.path.isfile(launcher_exe):
             ui.set("Error: launcher not found.")
             time.sleep(3)
             ui.close()
-            print(f"[Updater] Launcher not found: {launcher_exe}")
+            _log_setup.get().warning("[Updater] Launcher not found: %s", launcher_exe)
             return False
 
         ui.set("Installing...  Restarting shortly.")
@@ -288,8 +289,8 @@ def maybe_update(prereleases=False):
             _shutil.rmtree(update_pending)
         _shutil.move(update_root, update_pending)
 
-        print(f"[Updater] Pending update staged at: {update_pending}")
-        print(f"[Updater] Relaunching via launcher: {launcher_exe}")
+        _log_setup.get().info("[Updater] Pending update staged at: %s", update_pending)
+        _log_setup.get().info("[Updater] Relaunching via launcher: %s", launcher_exe)
         subprocess.Popen(
             [launcher_exe] + sys.argv[1:],
             cwd=root_dir,
@@ -299,7 +300,7 @@ def maybe_update(prereleases=False):
         sys.exit(0)
 
     except Exception as e:
-        print(f"[Updater] Update failed: {e}")
+        _log_setup.get().error("[Updater] Update failed: %s", e)
         if ui:
             ui.set(f"Update failed: {e}")
             time.sleep(3)

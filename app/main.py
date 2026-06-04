@@ -60,7 +60,7 @@ def ensure_config_exists(path: str, t) -> None:
             print(t("cfg.create_fail", err=e))
 
 def main():
-    _log = _log_setup.setup(CONFIG_DIR)
+    _log = _log_setup.get()
     _log.info("=== CounterTranslate startup ===")
 
     # 1) Konfiguration laden (load_config handles missing file gracefully)
@@ -175,6 +175,7 @@ def main():
     def _on_status(color, tooltip):
         _status["color"] = color
         _status["tooltip"] = tooltip
+        _log_setup.get().debug("[status] %s — %s", color, tooltip.replace("\n", " | "))
         _apply_status()
 
     from app import status_checker as _sc
@@ -282,9 +283,7 @@ def main():
             pass
 
 if __name__ == "__main__":
-    # Only run the self-updater if this is a frozen/packaged build
+    _log_setup.setup(CONFIG_DIR)
     if getattr(sys, "frozen", False) or _is_compiled:
         maybe_update(prereleases=False)
-
-    # then start your actual app
     main()
