@@ -54,8 +54,10 @@ class TkHud:
         _icon_dir = os.path.dirname(os.path.abspath(__file__))
         _ico = os.path.join(_icon_dir, "icon.ico")
         _png = os.path.join(_icon_dir, "icon.png")
+        self._ico_path = None
         try:
             if os.path.isfile(_ico):
+                self._ico_path = _ico
                 self.root.iconbitmap(_ico)
             elif os.path.isfile(_png):
                 from PIL import Image, ImageTk
@@ -255,9 +257,19 @@ class TkHud:
             style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
             style = (style | WS_EX_APPWINDOW) & ~WS_EX_TOOLWINDOW
             ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
-            # Hide/show cycle forces the taskbar to register the new style
+            # Hide/show cycle forces the taskbar to register the new style.
+            # Icon must be re-applied after deiconify — the cycle resets it.
+            def _reshow():
+                self.root.deiconify()
+                try:
+                    if self._ico_path:
+                        self.root.iconbitmap(self._ico_path)
+                    elif hasattr(self, "_icon_ref"):
+                        self.root.iconphoto(True, self._icon_ref)
+                except Exception:
+                    pass
             self.root.withdraw()
-            self.root.after(50, self.root.deiconify)
+            self.root.after(50, _reshow)
         except Exception:
             pass
 
