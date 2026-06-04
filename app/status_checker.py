@@ -2,9 +2,12 @@ import threading
 import time
 import requests
 
+from app import log_setup
+
 _STATUS_URL = "https://crimson-dog-44043.zap.cloud/status"
 _TIMEOUT = 8
 _INTERVAL = 300
+_RETRY_DELAY = 15
 
 
 def _fmt_uptime(seconds: int) -> str:
@@ -36,26 +39,30 @@ def _format_tooltip(d: dict) -> str:
 
 
 def _check(key: str = "") -> tuple[str, str]:
-    try:
-        headers = {}
-        if key.startswith("ct-"):
-            headers["Authorization"] = f"Bearer {key}"
-        r = requests.get(_STATUS_URL, timeout=_TIMEOUT, headers=headers)
-        if r.status_code != 200:
-            return "red", "Proxy not reachable"
-        d = r.json()
-        tooltip = _format_tooltip(d)
-        ck = d.get("ct_key")
-        if ck is None or not ck.get("valid", False):
-            return "red", tooltip
-        oa = d.get("openai", {})
-        if not oa.get("key_set", False) or not oa.get("reachable", False):
-            return "yellow", tooltip
-        if d.get("status") != "ok":
-            return "yellow", tooltip
-        return "green", tooltip
-    except Exception:
-        return "red", "Proxy not reachable"
+    for attempt in range(2):
+        try:
+            headers = {}
+            if key.startswith("ct-"):
+                headers["Authorization"] = f"Bearer {key}"
+            r = requests.get(_STATUS_URL, timeout=_TIMEOUT, headers=headers)
+            if r.status_code != 200:
+                return "red", "Proxy not reachable"
+            d = r.json()
+            tooltip = _format_tooltip(d)
+            ck = d.get("ct_key")
+            if ck is None or not ck.get("valid", False):
+                return "red", tooltip
+            oa = d.get("openai", {})
+            if not oa.get("key_set", False) or not oa.get("reachable", False):
+                return "yellow", tooltip
+            if d.get("status") != "ok":
+                return "yellow", tooltip
+            return "green", tooltip
+        except Exception as e:
+            log_setup.get().debug("[status_checker] attempt %d failed: %s", attempt + 1, e)
+            if attempt == 0:
+                time.sleep(_RETRY_DELAY)
+    return "red", "Proxy not reachable"
 
 
 def start(on_status_change, get_key=None, initial_delay: float = 3.0):
@@ -68,12 +75,15 @@ def start(on_status_change, get_key=None, initial_delay: float = 3.0):
     def _worker():
         time.sleep(initial_delay)
         while True:
-            key = get_key() if callable(get_key) else ""
-            color, tooltip = _check(key)
             try:
-                on_status_change(color, tooltip)
-            except Exception:
-                pass
+                key = get_key() if callable(get_key) else ""
+                color, tooltip = _check(key)
+                try:
+                    on_status_change(color, tooltip)
+                except Exception:
+                    pass
+            except Exception as e:
+                log_setup.get().error("[status_checker] worker error: %s", e)
             time.sleep(_INTERVAL)
 
     t = threading.Thread(target=_worker, daemon=True)
