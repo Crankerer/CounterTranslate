@@ -15,10 +15,16 @@ The app requires a `config.json` in the project root (auto-created on first run)
 
 ## Building the Executable
 
-Run from PowerShell (not Bash — the build relies on Windows PATH and `setlocal`):
+Run from PowerShell:
 
 ```powershell
 .\build.bat
+```
+
+From Bash (Claude Code), use:
+
+```bash
+cmd.exe /c "\"C:\path\to\build.bat\""
 ```
 
 This uses Nuitka to produce `dist/CounterTranslate/CounterTranslate.exe` (Launcher) and `dist/CounterTranslate/current/CounterTranslate_app.exe` (App). Language files are copied into the `current/lang/` folder. The version string is auto-generated from the current date/time and written to `app/_build_version.py`.
@@ -48,7 +54,7 @@ console.log  →  file_follow.py  →  tailer.py  →  llm.py  →  hud.py
 - `app/hud.py` — Transparent, always-on-top Tkinter window that reads from a `Queue` at ~30 fps (33 ms poll via `root.after`) and renders chat lines. Two layout modes: **normal** (`_normal_frame`: topbar + text widget + resize handle) and **compact** (`_compact_frame`: scrolling ticker canvas + buttons). The topbar contains a **status dot** (14×14 canvas, top-left), then ⊟ compact-toggle, ⛭ settings, and ✕ close buttons (all `Consolas 12 bold`, `padx=4`). The status dot is present in both normal and compact topbars; hovering shows a tooltip (`_tooltip_show`/`_tooltip_hide` via `Toplevel`). `set_status_color(color, tooltip)` updates both dots and tooltip text thread-safely via `root.after(0, ...)`. `set_status_visible(enabled)` sets the user preference flag; `_update_dot_visibility()` shows the dot when enabled OR when color is `"yellow"`/`"red"` (force-shown regardless of toggle). Status colors: `green=#44dd44`, `yellow=#ffcc00`, `red=#ff4444`, `blue=#4488ff`, gray=`#555555` (initial). Compact mode shows a single scrolling line (delta-time animation at ~60 fps via `_ticker_tick`); speed is configurable via `set_ticker_speed(px)`. Mode switch is purely visual — content is always written to the text widget. `Ctrl+MouseWheel` zooms font size (7–28pt); persisted via `on_font_change` callback. Alpha is set from `cfg["hud_alpha"]`; F2 cycles through 5 steps (1.0→0.8→0.6→0.4→0.2) and calls `on_alpha_change`. `_show_in_taskbar` sets `WS_EX_APPWINDOW` + withdraw/deiconify cycle so the window appears in the taskbar. Icon loaded from `app/icon.ico` (or `icon.png` via PIL). `stream_init` and `stream_update` are no-ops; the completed translation appears on `stream_done` via `_append_struct`. The text widget trims itself when the line count exceeds 2000 (removes the oldest 200 lines).
 - `app/settings_ui.py` — `open_settings(parent_root, cfg, config_path, on_save, base_dir, alpha_var, status_color, status_tooltip)` opens a borderless 620×680 Tkinter `Toplevel` settings dialog. `base_dir` is used for live UI language switching. `alpha_var` is a shared `tk.IntVar` (20–100) passed from `main.py` so F2 key presses update the opacity slider live; the trace is removed on window destroy. Interface section includes compact mode checkbox, ticker speed entry, HUD opacity slider (`field_slider`), a **Proxy-Status row** (colored dot + status text, hover tooltip using `status_color`/`status_tooltip` passed at open-time), and a `show_status_dot` checkbox. `target_lang` uses a styled combobox. `no_translate_langs` uses a checkbox-dropdown popup. The API key field is masked with `•`. The bottom bar displays the current app version. Saves back via `on_save`; does not write `config.json` itself.
 - `app/config.py` — `load_config` / `save_config` around `config.json`. Merges `DEFAULTS` for backward compatibility. Exports `DEFAULT_API_URL` (the built-in proxy endpoint used when `gpt_api` is empty). Supports an `open_ai_api_key_file` pointer as an alternative to embedding the key (config only, not exposed in settings UI). `DEFAULTS` contains legacy keys `llm_api` and `llm_model` (kept for backward compatibility with older config files; not used at runtime).
-- `app/status_checker.py` — Polls `GET https://crimson-dog-44043.zap.cloud/status` every 5 minutes (3 s initial delay) in a daemon thread. `_check(key)` returns `(color, tooltip_text)`: `"red"` if unreachable, `"yellow"` if `ct_key.valid` is false (when a `ct-` key was sent) or `openai.reachable`/`key_set` is false or `status != "ok"`, `"green"` otherwise. If `open_ai_api_key` starts with `ct-` it is sent as `Authorization: Bearer` so the server validates it and returns a `ct_key` block. Tooltip includes status, key validity + days remaining, OpenAI reachability, and formatted uptime. Does **not** use `http_session.SESSION` (no retries — fail fast for a status probe). `start(on_status_change, get_key, initial_delay)` launches the thread; `get_key` is a callable returning the current key string; callback receives `(color, tooltip)`.
+- `app/status_checker.py` — Polls `GET https://crimson-dog-44043.zap.cloud/status` every 5 minutes (3 s initial delay) in a daemon thread. `_check(key)` returns `(color, tooltip_text)`: `"red"` if unreachable, no `ct_key` in response (no key configured), or key is invalid/expired; `"yellow"` if key is valid but `openai.reachable`/`key_set` is false or `status != "ok"`; `"green"` otherwise. If `open_ai_api_key` starts with `ct-` it is sent as `Authorization: Bearer` so the server validates it and returns a `ct_key` block. Tooltip includes status, key validity + days remaining, OpenAI reachability, and formatted uptime. Does **not** use `http_session.SESSION` (no retries — fail fast for a status probe). `start(on_status_change, get_key, initial_delay)` launches the thread; `get_key` is a callable returning the current key string; callback receives `(color, tooltip)`.
 - `app/http_session.py` — Module-level `SESSION`: a shared `requests.Session` with retry/backoff (4 retries, exponential backoff, retries on 429/5xx). Import and reuse this instead of creating new sessions.
 - `app/util.py` — Small helpers: `ts()` (HH:MM:SS timestamp string), `normalize(s)` (strips zero-width Unicode characters from chat text), `primary_lang_tag(code)` (extracts the primary subtag from a BCP 47 code).
 - `app/i18n.py` — Loads `app/lang/lang_<code>.json`; `t("key", **kwargs)` does string substitution. Call `configure(base_dir, lang_code)` once at startup before any module uses `t()`. Module-level singleton; falls back to `lang_en.json` then `_DEFAULTS` if the JSON is missing. Supported UI language codes: `en`, `de`, `fr`, `pl`, `ru`.
@@ -140,6 +146,19 @@ Config is hot-reloaded by `tailer.py` every 5 seconds while running; changes to 
 | `ERROR` | Lines starting with `[LLM-Error]` or `[Error]` |
 
 The log file is excluded from git via the existing `*.log` rule in `.gitignore`.
+
+## Versioning and Releases
+
+Version format: `0.<major>.<yyMMddHHmm>` — the datetime suffix is auto-generated by `build.bat`. To release a new major version (e.g. `0.14` → `0.15`):
+
+1. Update the two occurrences of `0.14` in `build.bat` (lines with `CURRENT_VERSION` and `WIN_VERSION`)
+2. Commit: `chore: bump version to 0.15`
+3. Build — note the full version string printed as `Version: 0.15.yyMMddHHmm`
+4. Tag: `git tag v0.15.yyMMddHHmm`
+5. Push tag: `git push origin v0.15.yyMMddHHmm`
+6. Create GitHub release against that tag with `gh release create`
+
+The `ct-` prefix on `open_ai_api_key` identifies a proxy key (issued by the CounterTranslate proxy). Plain OpenAI keys (`sk-...`) work for direct API access but are not sent to the proxy status endpoint.
 
 ## Internationalization
 
