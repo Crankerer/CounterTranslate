@@ -15,9 +15,10 @@ When enemies or teammates write in Russian, Romanian, Chinese, or any other lang
 - Your own language is never translated (default: German)
 - Specific players can be ignored
 - Compact/ticker mode: single scrolling line for minimal screen space
-- Font size adjustable with Ctrl+MouseWheel
+- Font size adjustable with Ctrl+MouseWheel or in settings (with reset)
 - Configurable translation target language and skip list
 - Proxy status indicator dot (green / yellow / red / blue for custom API) with hover details
+- Always-on-top mode toggleable in settings
 - Auto-updates on startup (compiled build only)
 
 ---
@@ -120,6 +121,8 @@ Click the ⛭ icon in the top-right of the overlay to open the settings dialog:
 | **Ticker speed** | Scrolling speed in the compact mode (px/frame at 60 fps) |
 | **HUD opacity** | Overlay transparency from 20 % (nearly invisible) to 100 % (opaque) |
 | **Status dot** | Show/hide the proxy status indicator in the HUD topbar (yellow/red always shown regardless) |
+| **HUD font size** | Adjust font size (7–28 pt) with − / + buttons or reset to default; also adjustable with Ctrl+MouseWheel directly on the overlay |
+| **Always on top** | Keep the overlay above all other windows; uncheck to allow other windows to cover it |
 | **API URL** | Chat completions endpoint (default: OpenAI; customisable for local models) |
 | **Model** | LLM model (locked to `gpt-4.1-nano` for the official OpenAI URL; free text for custom endpoints) |
 | **Temperature** | LLM temperature — lower values produce more literal translations |
