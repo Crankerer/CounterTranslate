@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the App
 
+Requires **Python 3.10+** (uses `str | None` union syntax). Only two pip dependencies (`requests`, `urllib3`); Tkinter is from the stdlib.
+
 ```bash
 pip install -r requirements.txt
 python -m app.main
@@ -46,7 +48,7 @@ console.log  →  file_follow.py  →  tailer.py  →  llm.py  →  hud.py
 **Key modules:**
 
 - `app/main.py` — Entry point. Detects compiled vs. dev mode via `__compiled__` (Nuitka) / `sys.frozen` (PyInstaller): in compiled mode `BASE_DIR` is `current\` (next to the app EXE) and `CONFIG_DIR` is one level up (the install root); in dev mode both equal the project root. Handles config bootstrapping (log path picker if missing/invalid), wires up the `Queue` between `tailer` and `hud`, and launches both. Installs `_HudStream` that tees `sys.stdout` into the HUD queue so `print()` calls appear as overlay lines; lines starting with `[LLM-Error]` or `[Error]` are styled as errors. Also writes every line to the file logger (`log_setup`). No startup API-key prompt — the key is set via the settings dialog. After `TkHud` init, creates `_alpha_var` (shared `tk.IntVar`) and wires `_on_alpha_change` to save alpha and update the var; `save_font` persists font size changes; both are assigned as callbacks on the `hud` object post-construction. `open_settings_dialog` passes `alpha_var=_alpha_var` so the settings slider stays in sync with F2. Starts `status_checker` via `_on_status` callback; maintains `_status` dict with last known `color`/`tooltip`; `_apply_status()` overrides color to `"blue"` when a custom `gpt_api` URL is set, otherwise forwards the checker result. Current status is passed to `open_settings` at dialog open-time so the settings dot reflects live state.
-- `app/tailer.py` — Background daemon thread. Reads chunks from `file_follow`, calls `iter_chat_entries`, submits each message to the `ThreadPoolExecutor` (3 workers). Each worker streams via `call_chatgpt_stream` and pushes queue messages directly (see HUD Queue Protocol below). After streaming, parses the `[lang_code]` prefix from the LLM response and enforces `no_translate_langs` client-side — skips the message if the detected language is in the skip set. Also hot-reloads `config.json` every 5 seconds; only reacts to changes in `_RELOAD_KEYS` (API, model, languages, log_path, etc.) — UI-only keys like `hud_geometry` and `lang` are intentionally ignored to avoid spurious reloads. If `log_path` changes, reopens the file. Logs each detected chat entry, each LLM response, skipped-language messages, and empty responses via `log_setup`. Internal buffer is trimmed when it exceeds 2 MB (kept at 1 MB). `should_ignore(name, ignore_names)` matches by stripping zero-width chars (`normalize()`) then `casefold()` — both the incoming name and each entry in `ignore_names` are normalized before comparison.
+- `app/tailer.py` — Background daemon thread. Reads chunks from `file_follow`, calls `iter_chat_entries`, submits each message to the `ThreadPoolExecutor` (3 workers). Each worker streams via `call_chatgpt_stream` and pushes queue messages directly (see HUD Queue Protocol below). After streaming, parses the `[lang_code]` prefix from the LLM response and enforces `no_translate_langs` client-side — skips the message if the detected language is in the skip set. Also hot-reloads `config.json` every 5 seconds; only reacts to changes in `_RELOAD_KEYS` (`gpt_api`, `gpt_model`, `temperature`, `no_translate_langs`, `target_lang`, `log_path`, `poll_interval_ms`, `ignore_names`, `open_ai_api_key`) — UI-only keys like `hud_geometry` and `lang` are intentionally ignored to avoid spurious reloads. If `log_path` changes, reopens the file. Logs each detected chat entry, each LLM response, skipped-language messages, and empty responses via `log_setup`. Internal buffer is trimmed when it exceeds 2 MB (kept at 1 MB). `should_ignore(name, ignore_names)` matches by stripping zero-width chars (`normalize()`) then `casefold()` — both the incoming name and each entry in `ignore_names` are normalized before comparison.
 - `app/llm.py` — LLM I/O. `call_chatgpt_stream` is a generator that yields raw SSE text chunks; `call_chatgpt` wraps it for non-streaming use. Falls back to `DEFAULT_API_URL` (from `config.py`) when `api_url` is empty. `build_system_prompt` constructs the system prompt from `no_translate_langs` and `target_lang`. Reasoning/o-series models (`_NO_TEMP_MODELS`, matched by `_supports_temperature`) do not receive a `temperature` field. The request body is sent as raw UTF-8-encoded JSON bytes (not `json=` kwarg). Logs each outgoing request via `log_setup`.
 - `app/log_setup.py` — File logging singleton. `setup(log_dir)` creates/overwrites `countertranslate.log` in `log_dir` on every startup (mode `'w'`). `get()` returns the `logging.Logger` named `"ct"`. Import `log_setup` and call `get()` from any module that needs to log.
 - `app/parser.py` — Exports `CHAT_ENTRY_RE` (regex) and `iter_chat_entries(buffer)` (generator). Matches CS2 chat lines for all supported game languages via an explicit scope alternation (`_SCOPE`): covers ALL-chat variants (`ALL`, `ALLE`, `TOUS`, `TODOS`, `ВСЕ`, `WSZYSCY`, `TUTTI`, `ТÜМÜ`, Cyrillic/CJK variants, etc.) and team scopes (`CT`, `T`, `AT`, `КТ`, `Т`). Accepts both ASCII colon `:` and full-width colon `：` as the name/message separator. `[DEAD]`/`[SPEC]` suffixes after the player name are captured as part of the name field. Uses `re.DOTALL`. Yields `(dt, scope, name, msg, endpos)` tuples.
@@ -149,13 +151,13 @@ The log file is excluded from git via the existing `*.log` rule in `.gitignore`.
 
 ## Versioning and Releases
 
-Version format: `0.<major>.<yyMMddHHmm>` — the datetime suffix is auto-generated by `build.bat`. To release a new major version (e.g. `0.14` → `0.15`):
+Version format: `0.<major>.<yyMMddHHmm>` — the datetime suffix is auto-generated by `build.bat`. To release a new major version (e.g. `0.15` → `0.16`):
 
-1. Update the two occurrences of `0.14` in `build.bat` (lines with `CURRENT_VERSION` and `WIN_VERSION`)
-2. Commit: `chore: bump version to 0.15`
-3. Build — note the full version string printed as `Version: 0.15.yyMMddHHmm`
-4. Tag: `git tag v0.15.yyMMddHHmm`
-5. Push tag: `git push origin v0.15.yyMMddHHmm`
+1. Update the two occurrences of `0.15` in `build.bat` (lines with `CURRENT_VERSION` and `WIN_VERSION`)
+2. Commit: `chore: bump version to 0.16`
+3. Build — note the full version string printed as `Version: 0.16.yyMMddHHmm`
+4. Tag: `git tag v0.16.yyMMddHHmm`
+5. Push tag: `git push origin v0.16.yyMMddHHmm`
 6. Create GitHub release against that tag with `gh release create`
 
 The `ct-` prefix on `open_ai_api_key` identifies a proxy key (issued by the CounterTranslate proxy). Plain OpenAI keys (`sk-...`) work for direct API access but are not sent to the proxy status endpoint.
