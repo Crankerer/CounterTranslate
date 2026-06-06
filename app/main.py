@@ -158,6 +158,7 @@ def main():
         compact_mode=bool(cfg.get("compact_mode", False)),
         ticker_speed=int(cfg.get("ticker_speed", 2)),
         show_status_dot=bool(cfg.get("show_status_dot", True)),
+        always_on_top=bool(cfg.get("always_on_top", True)),
     )
 
     _status = {"color": "", "tooltip": ""}
@@ -213,6 +214,8 @@ def main():
             hud.root.attributes("-alpha", new_alpha)
             _alpha_var.set(int(round(new_alpha * 100)))
             hud.set_status_visible(bool(new_cfg.get("show_status_dot", True)))
+            hud.set_topmost(bool(new_cfg.get("always_on_top", True)))
+            hud.set_font(new_cfg.get("hud_font", "Consolas 11"))
             _apply_status()
         open_settings(hud.root, cfg, CONFIG_FILENAME, on_save=on_save, base_dir=I18N_DIR,
                       alpha_var=_alpha_var, status_color=_status["color"],

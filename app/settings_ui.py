@@ -277,6 +277,48 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                  sliderlength=14, width=8).pack(side="left", fill="x", expand=True, padx=(0, 6))
         entries[key] = var
 
+    def field_font(key, label, default="Consolas 11"):
+        font_str = cfg.get(key, default) or default
+        parts = font_str.rsplit(" ", 1)
+        family = parts[0] if len(parts) == 2 else "Consolas"
+        try:
+            init_size = int(parts[-1])
+        except ValueError:
+            init_size = 11
+        init_size = max(7, min(init_size, 28))
+
+        font_var = tk.StringVar(value=f"{family} {init_size}")
+        size_var = tk.IntVar(value=init_size)
+        entries[key] = font_var
+
+        def _set(new_size):
+            new_size = max(7, min(new_size, 28))
+            size_var.set(new_size)
+            font_var.set(f"{family} {new_size}")
+
+        row = tk.Frame(body, bg=BG)
+        row.pack(fill="x", pady=(4, 0))
+        tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
+                 font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+
+        for text, delta in (("−", -1), ("+", 1)):
+            btn = tk.Label(row, text=text, fg=FG_ACCENT, bg="#1a1a1a",
+                           font=FONT_BOLD, cursor="hand2", padx=8, pady=1)
+            btn.pack(side="left", padx=(0 if text == "−" else 0, 0))
+            btn.bind("<Button-1>", lambda e, d=delta: _set(size_var.get() + d))
+            btn.bind("<Enter>", lambda e, b=btn: b.config(fg="#ffffff"))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(fg=FG_ACCENT))
+            if text == "−":
+                tk.Label(row, textvariable=size_var, fg=FG_VALUE, bg=BG,
+                         font=FONT, width=3, anchor="center").pack(side="left", padx=4)
+
+        reset_lbl = tk.Label(row, text=t("settings.btn.reset"), fg="#666666", bg=BG,
+                             font=FONT_SMALL, cursor="hand2")
+        reset_lbl.pack(side="left", padx=(10, 0))
+        reset_lbl.bind("<Button-1>", lambda e: _set(int(default.rsplit(" ", 1)[-1])))
+        reset_lbl.bind("<Enter>", lambda e: reset_lbl.config(fg=FG_LABEL))
+        reset_lbl.bind("<Leave>", lambda e: reset_lbl.config(fg="#666666"))
+
     def field_check(key, label):
         row = tk.Frame(body, bg=BG)
         row.pack(fill="x", pady=(4, 0))
@@ -359,6 +401,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     field_check("compact_mode",   t("settings.field.compact_mode"))
     field("ticker_speed",         t("settings.field.ticker_speed"),      width=6)
     field_slider("hud_alpha",     t("settings.field.hud_alpha"), shared_var=alpha_var)
+    field_font("hud_font",        t("settings.field.hud_font"))
 
     # ── proxy status display ──────────────────────────────────────────────────
     _s_fills = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444", "blue": "#4488ff"}
@@ -395,6 +438,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     win.bind("<Destroy>", _s_hide, "+")
 
     field_check("show_status_dot", t("settings.field.show_status_dot"))
+    field_check("always_on_top",   t("settings.field.always_on_top"))
 
     section(t("settings.section.llm"))
 

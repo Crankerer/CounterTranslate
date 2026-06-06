@@ -24,7 +24,7 @@ class TkHud:
                  geometry: str = None, on_geometry_change=None, on_settings=None,
                  on_font_change=None, on_alpha_change=None,
                  compact_mode: bool = False, ticker_speed: int = 2,
-                 show_status_dot: bool = True):
+                 show_status_dot: bool = True, always_on_top: bool = True):
         self.queue = queue
         self.on_geometry_change = on_geometry_change
         self.on_settings = on_settings
@@ -45,7 +45,7 @@ class TkHud:
 
         self.root = tk.Tk()
         self.root.title("CS2 Chat HUD")
-        self.root.attributes("-topmost", True)
+        self.root.attributes("-topmost", always_on_top)
         self.root.overrideredirect(True)
         self.root.configure(bg="black")
         self.root.wm_attributes("-alpha", alpha)
@@ -326,6 +326,19 @@ class TkHud:
         self._status_setting_enabled = enabled
         try:
             self.root.after(0, self._update_dot_visibility)
+        except Exception:
+            pass
+
+    def set_topmost(self, enabled: bool):
+        try:
+            self.root.attributes("-topmost", enabled)
+        except Exception:
+            pass
+
+    def set_font(self, font_str: str):
+        self._font = font_str
+        try:
+            self.text.configure(font=font_str)
         except Exception:
             pass
 

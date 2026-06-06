@@ -18,7 +18,9 @@ DEFAULTS = {
     "compact_mode": False,
     "ticker_speed": 2,
     "hud_alpha": 0.72,
-    "show_status_dot": True
+    "show_status_dot": True,
+    "always_on_top": True,
+    "hud_font": "Consolas 11",
 }
 
 
