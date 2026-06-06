@@ -126,6 +126,8 @@ Stream IDs are 12-digit monotonic-ns suffixes.
 | `compact_mode` | `false` | Start in compact/ticker mode |
 | `ticker_speed` | `2` | Ticker scroll speed in px/frame at 60 fps |
 | `show_status_dot` | `true` | Show proxy status dot in HUD topbar; yellow/red always override this and force the dot visible |
+| `always_on_top` | `true` | Keep the HUD window above all other windows (`-topmost`); can be toggled in settings |
+| `hud_font` | `"Consolas 11"` | Saved HUD font string (written on Ctrl+MouseWheel zoom or settings save) |
 | `llm_api` | local endpoint | Legacy key kept in `DEFAULTS` for backward compatibility; not used at runtime |
 | `llm_model` | `"local-model"` | Legacy key kept in `DEFAULTS` for backward compatibility; not used at runtime |
 
