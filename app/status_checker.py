@@ -38,12 +38,14 @@ def _format_tooltip(d: dict) -> str:
     return "\n".join(lines)
 
 
-def _check(key: str = "") -> tuple[str, str]:
+def _check(key: str = "", version: str = "") -> tuple[str, str]:
     for attempt in range(2):
         try:
             headers = {}
             if key.startswith("ct-"):
                 headers["Authorization"] = f"Bearer {key}"
+            if version:
+                headers["X-Client-Version"] = version
             r = requests.get(_STATUS_URL, timeout=_TIMEOUT, headers=headers)
             if r.status_code != 200:
                 return "red", "Proxy not reachable"
@@ -72,12 +74,17 @@ def start(on_status_change, get_key=None, initial_delay: float = 3.0):
              If the key starts with 'ct-' it is sent as a Bearer token so
              the server validates it and includes a ct_key block in the response.
     """
+    try:
+        from app._build_version import CURRENT_VERSION as _version
+    except Exception:
+        _version = "dev"
+
     def _worker():
         time.sleep(initial_delay)
         while True:
             try:
                 key = get_key() if callable(get_key) else ""
-                color, tooltip = _check(key)
+                color, tooltip = _check(key, _version)
                 try:
                     on_status_change(color, tooltip)
                 except Exception:
