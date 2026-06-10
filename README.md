@@ -10,6 +10,8 @@ Transparent overlay for CS2 that automatically translates chat messages in real 
 
 When enemies or teammates write in Russian, Romanian, Chinese, or any other language, the translation appears immediately as a semi-transparent overlay — without alt-tabbing, copy-pasting, or opening a separate window.
 
+It works by reading the `console.log` file that CS2 writes on its own, sending new chat lines to an LLM for translation, and displaying the result in a transparent always-on-top window.
+
 - All languages are detected and translated automatically
 - Transparent overlay, always on top — adjustable opacity
 - Your own language is never translated (default: German)
@@ -17,7 +19,7 @@ When enemies or teammates write in Russian, Romanian, Chinese, or any other lang
 - Compact/ticker mode: single scrolling line for minimal screen space
 - Font size adjustable with Ctrl+MouseWheel or in settings (with reset)
 - Configurable translation target language and skip list
-- Proxy status indicator dot (green / yellow / red / blue for custom API) with hover details
+- Connection status dot showing the health of the translation endpoint (green = OK, yellow = degraded, red = unreachable or invalid key, blue = custom API URL in use) with hover details
 - Always-on-top mode toggleable in settings
 - Auto-updates on startup (compiled build only)
 
@@ -78,9 +80,9 @@ CounterTranslate needs an API key for translation:
 2. Extract the ZIP
 3. Launch `CounterTranslate.exe`
 
-On **first launch**, CounterTranslate will automatically ask for:
-- your **OpenAI API key**
-- the path to **console.log** (select the CS2 base folder — the rest is filled in automatically)
+On **first launch**, CounterTranslate asks for the path to **console.log** — select the CS2 base folder (`Counter-Strike Global Offensive`) and the rest is filled in automatically.
+
+Then click the ⛭ icon in the overlay's top bar to open the settings and paste your **OpenAI API key** into the **API key** field. Without a key, chat messages cannot be translated.
 
 ---
 
@@ -113,14 +115,14 @@ Click the ⛭ icon in the top-right of the overlay to open the settings dialog:
 
 | Setting | Description |
 |---------|-------------|
-| **UI Language** | Language of the settings interface |
+| **UI Language** | Language of the settings interface (English, German, French, Polish, Russian) |
 | **Translate into** | Target language for translations (e.g. `German`) |
 | **Skip langs** | Languages that are never translated (e.g. `de` for German) |
 | **Ignore players** | Player names whose messages are skipped |
 | **Compact mode** | Enable single-line scrolling ticker instead of the full overlay |
 | **Ticker speed** | Scrolling speed in the compact mode (px/frame at 60 fps) |
 | **HUD opacity** | Overlay transparency from 20 % (nearly invisible) to 100 % (opaque) |
-| **Status dot** | Show/hide the proxy status indicator in the HUD topbar (yellow/red always shown regardless) |
+| **Status dot** | Show/hide the connection status indicator in the HUD topbar (yellow/red always shown regardless) |
 | **HUD font size** | Adjust font size (7–28 pt) with − / + buttons or reset to default; also adjustable with Ctrl+MouseWheel directly on the overlay |
 | **Always on top** | Keep the overlay above all other windows; uncheck to allow other windows to cover it |
 | **API URL** | Chat completions endpoint (default: OpenAI; customisable for local models) |
@@ -145,3 +147,25 @@ All settings are saved immediately and take effect without restarting the app.
 - Check that the API key is entered correctly
 - Check that your OpenAI account has sufficient credit
 - If using a custom endpoint, make sure the model name matches what the server expects
+
+**Still stuck?**
+- Check `countertranslate.log` in the installation folder (next to `CounterTranslate.exe`) — it records the startup configuration, detected chat lines, and API errors. Please attach it when reporting a bug.
+
+---
+
+## Running from Source
+
+Windows with Python 3.10+ is required:
+
+```
+git clone https://github.com/Crankerer/CounterTranslate.git
+cd CounterTranslate
+pip install -r requirements.txt
+python -m app.main
+```
+
+---
+
+## License
+
+CounterTranslate is licensed under the [GNU GPL v3](LICENSE).
