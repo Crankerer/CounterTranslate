@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .util import ts, normalize
 from .parser import iter_chat_entries, trim_before_last_ts
 from .file_follow import open_follow
-from .llm import build_system_prompt, call_chatgpt_stream
+from .llm import build_system_prompt, call_chatgpt
 from .i18n import t
 from . import log_setup as _log_setup
 
@@ -118,66 +118,56 @@ def start_tail_thread(
                             _log_setup.get().debug("[ignored] [%s] %s: %s", scope, name, orig_msg)
                             continue
 
-                        stream_id = str(time.monotonic_ns())[-12:]
                         _log_setup.get().debug(
                             f"[chat] [{scope}] {name}: {orig_msg}"
                         )
-                        queue.put(("stream_init", {
-                            "id": stream_id, "dt": dt, "scope": scope,
-                            "name": name, "orig": orig_msg,
-                        }))
 
                         # Snapshot config for this call so hot-reload doesn't race
                         snap = dict(current_cfg)
                         snap_prompt = system_prompt
 
-                        def _stream_worker(
-                            sid=stream_id, dt=dt, scope=scope,
-                            name=name, orig=orig_msg,
+                        def _translate_worker(
+                            dt=dt, scope=scope, name=name, orig=orig_msg,
                             snap=snap, prompt=snap_prompt,
                         ):
-                            full_text = ""
                             try:
-                                for chunk_text in call_chatgpt_stream(
+                                full_text = call_chatgpt(
                                     snap["gpt_api"], snap["gpt_model"],
                                     snap.get("open_ai_api_key", ""),
                                     float(snap.get("temperature", 0.2)),
                                     name, orig, prompt,
-                                ):
-                                    full_text += chunk_text
-                                    queue.put(("stream_update", {"id": sid, "delta": chunk_text}))
+                                )
                             except Exception as e:
                                 print(ts(), t("tail.error", err=e))
+                                return
 
-                            if full_text:
-                                lang, msg_clean = _parse_lang_prefix(full_text)
-                                skip_set = {
-                                    (c or "").split("-")[0].strip().lower()
-                                    for c in snap.get("no_translate_langs", []) if c
-                                }
-                                if msg_clean and lang and lang in skip_set:
-                                    _log_setup.get().debug(
-                                        f"[skipped_lang] [{lang}] {name}: {orig}"
-                                    )
-                                    queue.put(("stream_remove", {"id": sid}))
-                                elif msg_clean:
-                                    _log_setup.get().debug(
-                                        f"[llm_response] [{lang}] {name} → {msg_clean}"
-                                    )
-                                    queue.put(("stream_done", {
-                                        "id": sid, "dt": dt, "scope": scope,
-                                        "name": name, "orig": orig,
-                                        "lang": lang, "msg": msg_clean,
-                                    }))
-                                else:
-                                    queue.put(("stream_remove", {"id": sid}))
-                            else:
+                            if not full_text:
                                 _log_setup.get().debug(
                                     f"[skipped_empty] {name}: {orig}"
                                 )
-                                queue.put(("stream_remove", {"id": sid}))
+                                return
 
-                        pool.submit(_stream_worker)
+                            lang, msg_clean = _parse_lang_prefix(full_text)
+                            if not msg_clean:
+                                return
+                            skip_set = {
+                                (c or "").split("-")[0].strip().lower()
+                                for c in snap.get("no_translate_langs", []) if c
+                            }
+                            if lang and lang in skip_set:
+                                _log_setup.get().debug(
+                                    f"[skipped_lang] [{lang}] {name}: {orig}"
+                                )
+                                return
+                            _log_setup.get().debug(
+                                f"[llm_response] [{lang}] {name} → {msg_clean}"
+                            )
+                            queue.put(("structured", {
+                                "dt": dt, "scope": scope, "name": name,
+                                "orig": orig, "lang": lang, "msg": msg_clean,
+                            }))
+
+                        pool.submit(_translate_worker)
 
                     if last_end:
                         buffer = buffer[last_end:]

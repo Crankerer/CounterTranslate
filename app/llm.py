@@ -38,14 +38,15 @@ def build_system_prompt(skip_langs: list[str], target_lang: str = "German") -> s
     )
 
 
-def call_chatgpt_stream(
+def call_chatgpt(
     api_url: str, model: str, api_key: str, temperature: float,
     name: str, message: str, system_prompt: str, timeout_s: float = 15.0,
-):
+) -> str:
+    """Non-streaming chat-completions request. Returns the response text, or "" on error/empty."""
     api_url = (api_url or "").strip() or DEFAULT_API_URL
     if not api_key:
         print(ts(), t("llm.error.no_key"))
-        return
+        return ""
 
     _log_setup.get().debug(
         f"[llm_request] api={api_url} model={model} name={name} msg={message[:120]}"
@@ -53,7 +54,6 @@ def call_chatgpt_stream(
 
     payload = {
         "model": model,
-        "stream": True,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps({"name": name, "message": message}, ensure_ascii=False)},
@@ -68,31 +68,15 @@ def call_chatgpt_stream(
             api_url,
             headers=headers,
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            stream=True,
             timeout=timeout_s,
         )
         if res.status_code == 401:
             print(ts(), t("llm.error.unauthorized"))
-            return
-        if res.status_code == 429:
-            print(ts(), t("llm.error.rate_limit"))
+            return ""
         res.raise_for_status()
-        for raw_line in res.iter_lines():
-            if not raw_line:
-                continue
-            line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
-            if not line.startswith("data: "):
-                continue
-            data_str = line[6:]
-            if data_str.strip() == "[DONE]":
-                break
-            try:
-                data = json.loads(data_str)
-                delta = (data.get("choices") or [{}])[0].get("delta", {}).get("content") or ""
-                if delta:
-                    yield delta
-            except (json.JSONDecodeError, IndexError, KeyError):
-                continue
+        data = res.json()
+        content = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+        return content.strip()
     except requests.Timeout:
         print(ts(), t("llm.error.timeout"))
     except requests.HTTPError as e:
@@ -103,12 +87,4 @@ def call_chatgpt_stream(
         print(ts(), t("llm.error.exception", err=api_msg))
     except Exception as e:
         print(ts(), t("llm.error.exception", err=e))
-
-
-def call_chatgpt(
-    api_url: str, model: str, api_key: str, temperature: float,
-    name: str, message: str, system_prompt: str, timeout_s: float = 12.0,
-) -> str:
-    return "".join(
-        call_chatgpt_stream(api_url, model, api_key, temperature, name, message, system_prompt, timeout_s)
-    )
+    return ""

@@ -31,7 +31,6 @@ class TkHud:
         self.on_font_change = on_font_change
         self.on_alpha_change = on_alpha_change
         self._line_count = 0
-        self._stream_marks: dict = {}
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
         self._font = font
         self._compact = False
@@ -492,14 +491,6 @@ class TkHud:
                     self._append_line(payload)
                 elif typ == "error":
                     self._append_line(payload, tag="err")
-                elif typ == "stream_init":
-                    self._stream_init(**payload)
-                elif typ == "stream_update":
-                    self._stream_update(**payload)
-                elif typ == "stream_done":
-                    self._stream_done(**payload)
-                elif typ == "stream_remove":
-                    self._stream_remove(**payload)
                 self.queue.task_done()
         except Empty:
             pass
@@ -537,21 +528,6 @@ class TkHud:
         if not self._compact:
             self.text.see("end")
         self.text.configure(state="disabled")
-
-    # ── streaming ────────────────────────────────────────────────────────────
-
-    def _stream_init(self, id: str, dt: str, scope: str, name: str, orig: str = ""):
-        pass  # no placeholder shown; result appears on stream_done
-
-    def _stream_update(self, id: str, delta: str):
-        pass
-
-    def _stream_done(self, id: str, dt: str, scope: str, name: str,
-                     orig: str, lang: str, msg: str):
-        self._append_struct(dt=dt, scope=scope, name=name, msg=msg, orig=orig, lang=lang)
-
-    def _stream_remove(self, id: str):
-        pass  # nothing was inserted, nothing to remove
 
     def run(self):
         self.root.mainloop()
