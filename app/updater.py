@@ -179,8 +179,11 @@ def maybe_update(prereleases=False):
                 rel = next(
                     (r for r in rel_data
                      if not r.get("draft") and not r.get("prerelease")),
-                    rel_data[0]
+                    None
                 )
+                if rel is None:
+                    _log_setup.get().info("[Updater] No stable release found.")
+                    return False
         elif isinstance(rel_data, dict):
             rel = rel_data
         else:
