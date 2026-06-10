@@ -21,7 +21,7 @@ It works by reading the `console.log` file that CS2 writes on its own, sending n
 - Configurable translation target language and skip list
 - Connection status dot showing the health of the translation endpoint (green = OK, yellow = degraded, red = unreachable or invalid key, blue = custom API URL in use) with hover details
 - Always-on-top mode toggleable in settings
-- Auto-updates on startup (compiled build only)
+- Automatic update check on startup — asks for confirmation before downloading (compiled build only)
 
 ---
 
