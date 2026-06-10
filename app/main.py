@@ -63,21 +63,21 @@ def main():
     _log = _log_setup.get()
     _log.info("=== CounterTranslate startup ===")
 
-    # 1) Konfiguration laden (load_config handles missing file gracefully)
+    # 1) Load configuration (load_config handles missing file gracefully)
     cfg = load_config(CONFIG_FILENAME)
 
-    # 2) i18n Singleton konfigurieren — ab hier ist t() überall verfügbar
+    # 2) Configure the i18n singleton — from here on t() is available everywhere
     lang_code = (cfg.get("lang") or "en").strip().lower()
     _i18n_mod.configure(I18N_DIR, lang_code)
     from app.i18n import t
 
-    # 3) config.json erstmalig anlegen (jetzt mit echten i18n-Strings)
+    # 3) Create config.json on first run (now with real i18n strings)
     ensure_config_exists(CONFIG_FILENAME, t)
 
-    # 4) log_path prüfen (leer/ungültig → Steam-Basisordner wählen & Pfad bauen)
+    # 4) Validate log_path (empty/invalid → pick Steam base folder & build path)
     raw_log_path = (cfg.get("log_path") or "").strip()
     if not raw_log_path or not os.path.isfile(raw_log_path):
-        hint = "leer" if not raw_log_path else f"nicht gefunden: {raw_log_path}"
+        hint = t("log.hint_empty") if not raw_log_path else t("log.hint_notfound", path=raw_log_path)
         print(t("log.hint_choose", hint=hint))
 
         _cs2_default = r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
@@ -111,13 +111,13 @@ def main():
     print(t("hud.title"))
     print(t("app.header"))
     print(t("hud.logfile", log=log_path))
-    print(t("hud.ignore", names=', '.join(ignore_names) or '(keine)'))
+    print(t("hud.ignore", names=', '.join(ignore_names) or t("hud.none")))
     print(t("hud.gpt_api", api=cfg.get("gpt_api")))
     print(t("hud.gpt_model", model=cfg.get("gpt_model")))
-    print(t("hud.api_key", state='(gesetzt)' if cfg.get("open_ai_api_key") else '(leer)'))
+    print(t("hud.api_key", state=t("hud.key_set") if cfg.get("open_ai_api_key") else t("hud.key_empty")))
     print(t("hud.temp", temp=cfg.get("temperature")))
     print(t("hud.target_lang", lang=cfg.get("target_lang", "German")))
-    print(t("hud.no_translate", langs=', '.join(cfg.get('no_translate_langs', [])) or '(leer)'))
+    print(t("hud.no_translate", langs=', '.join(cfg.get('no_translate_langs', [])) or t("hud.none")))
     print(t("hud.poll", ms=poll_ms))
     key_file = (cfg.get("open_ai_api_key_file") or "").strip()
     if key_file:
@@ -129,7 +129,7 @@ def main():
         f"| no_translate={cfg.get('no_translate_langs')} | temp={cfg.get('temperature')}"
     )
 
-    # HUD + Tail starten
+    # Start HUD + tailer
     from app.hud import TkHud
     from app.tailer import start_tail_thread
     from app.settings_ui import open_settings
