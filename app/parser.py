@@ -24,6 +24,9 @@ CHAT_ENTRY_RE = re.compile(
     re.DOTALL
 )
 
+_TS_FIND_RE = re.compile(TS_CORE)
+
+
 def iter_chat_entries(buffer: str):
     for m in CHAT_ENTRY_RE.finditer(buffer):
         yield (
@@ -33,3 +36,18 @@ def iter_chat_entries(buffer: str):
             m.group('msg').strip(),
             m.end()
         )
+
+
+def trim_before_last_ts(buffer: str) -> str:
+    """Drop everything before the last timestamp in the buffer.
+
+    Any chat entry starting before the last timestamp already had its
+    terminating timestamp available, so it was either matched (and consumed
+    via endpos) or it is non-chat output that can never match. Only the
+    content from the last timestamp onward can still become a chat entry
+    once more data arrives.
+    """
+    start = -1
+    for m in _TS_FIND_RE.finditer(buffer):
+        start = m.start()
+    return buffer[start:] if start > 0 else buffer

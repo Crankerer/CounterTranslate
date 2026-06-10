@@ -1,7 +1,7 @@
 import os, re, time, threading
 from concurrent.futures import ThreadPoolExecutor
 from .util import ts, normalize
-from .parser import iter_chat_entries
+from .parser import iter_chat_entries, trim_before_last_ts
 from .file_follow import open_follow
 from .llm import build_system_prompt, call_chatgpt_stream
 from .i18n import t
@@ -181,6 +181,9 @@ def start_tail_thread(
 
                     if last_end:
                         buffer = buffer[last_end:]
+                    # Non-chat console output can never match once complete —
+                    # drop it so the regex doesn't rescan it on every poll.
+                    buffer = trim_before_last_ts(buffer)
                     if len(buffer) > 2_000_000:
                         _log_setup.get().warning("[tailer] buffer exceeded 2 MB, trimmed to 1 MB")
                         buffer = buffer[-1_000_000:]
