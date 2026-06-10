@@ -85,36 +85,45 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
 
     entries = {}  # key → widget
 
+    # ── widget value collection (shared by Save and language switch) ──────────
+    def _collect() -> dict:
+        out = dict(cfg)
+        out["gpt_api"] = _get_api_url()
+        for key, widget in entries.items():
+            if isinstance(widget, tk.BooleanVar):
+                out[key] = widget.get()
+            elif isinstance(widget, tk.IntVar):
+                out[key] = widget.get() / 100.0
+            elif isinstance(widget, tk.StringVar):
+                val = widget.get()
+                if key in ("no_translate_langs", "ignore_names"):
+                    out[key] = [x.strip() for x in val.split(",") if x.strip()]
+                else:
+                    out[key] = val
+            else:
+                raw = widget.get().strip()
+                if key in ("no_translate_langs", "ignore_names"):
+                    out[key] = [x.strip() for x in raw.split(",") if x.strip()]
+                elif key == "temperature":
+                    try: out[key] = float(raw)
+                    except ValueError: pass
+                elif key in ("poll_interval_ms", "ticker_speed"):
+                    try: out[key] = int(raw)
+                    except ValueError: pass
+                elif key == "open_ai_api_key":
+                    # Empty field means "keep the stored key" — never clears it.
+                    if raw:
+                        out[key] = raw
+                else:
+                    out[key] = raw
+        return out
+
     # ── language rebuild ──────────────────────────────────────────────────────
     def _on_lang_change(new_code):
         if base_dir:
             import app.i18n as _i18n
             _i18n.configure(base_dir, new_code)
-        snap = dict(cfg)
-        snap["gpt_api"] = _get_api_url()
-        for k, w in entries.items():
-            if isinstance(w, tk.BooleanVar):
-                snap[k] = w.get()
-            elif isinstance(w, tk.IntVar):
-                snap[k] = w.get() / 100.0
-            elif isinstance(w, tk.StringVar):
-                val = w.get()
-                if k in ("no_translate_langs", "ignore_names"):
-                    snap[k] = [x.strip() for x in val.split(",") if x.strip()]
-                else:
-                    snap[k] = val
-            else:
-                raw = w.get().strip()
-                if k in ("no_translate_langs", "ignore_names"):
-                    snap[k] = [x.strip() for x in raw.split(",") if x.strip()]
-                elif k == "temperature":
-                    try: snap[k] = float(raw)
-                    except ValueError: pass
-                elif k in ("poll_interval_ms", "ticker_speed"):
-                    try: snap[k] = int(raw)
-                    except ValueError: pass
-                else:
-                    snap[k] = raw
+        snap = _collect()
         win.destroy()
         open_settings(parent_root, snap, config_path, on_save=on_save, base_dir=base_dir,
                       alpha_var=alpha_var, status_color=status_color, status_tooltip=status_tooltip)
@@ -501,38 +510,9 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         return b
 
     def _save():
-        new_cfg = dict(cfg)
-        new_cfg["gpt_api"] = _get_api_url()
+        new_cfg = _collect()
         if not new_cfg["gpt_api"]:
             new_cfg["gpt_model"] = "gpt-4.1-nano"
-        for key, widget in entries.items():
-            if isinstance(widget, tk.BooleanVar):
-                new_cfg[key] = widget.get()
-                continue
-            if isinstance(widget, tk.IntVar):
-                new_cfg[key] = widget.get() / 100.0
-                continue
-            if isinstance(widget, tk.StringVar):
-                val = widget.get()
-                if key in ("no_translate_langs", "ignore_names"):
-                    new_cfg[key] = [x.strip() for x in val.split(",") if x.strip()]
-                else:
-                    new_cfg[key] = val
-            else:
-                raw = widget.get().strip()
-                if key in ("no_translate_langs", "ignore_names"):
-                    new_cfg[key] = [x.strip() for x in raw.split(",") if x.strip()]
-                elif key == "temperature":
-                    try: new_cfg[key] = float(raw)
-                    except ValueError: pass
-                elif key in ("poll_interval_ms", "ticker_speed"):
-                    try: new_cfg[key] = int(raw)
-                    except ValueError: pass
-                elif key == "open_ai_api_key":
-                    if raw:
-                        new_cfg[key] = raw
-                else:
-                    new_cfg[key] = raw
         if on_save:
             on_save(new_cfg)
         win.destroy()
