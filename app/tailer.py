@@ -17,9 +17,20 @@ def _parse_lang_prefix(text: str) -> tuple[str, str]:
     return "", text
 
 
+# Trailing bracketed tokens like "[DEAD]"/"[SPEC]" (any language) appended
+# to the player name by CS2 when the player is dead or spectating.
+_NAME_SUFFIX_RE = re.compile(r'(?:\s*\[[^\[\]]*\])+\s*$')
+
+
 def should_ignore(name: str, ignore_names: list[str]) -> bool:
+    targets = {normalize(x).casefold() for x in ignore_names}
+    if not targets:
+        return False
     n = normalize(name).casefold()
-    return any(n == normalize(x).casefold() for x in ignore_names)
+    # Match both the raw name and the suffix-stripped name, so ignored
+    # players stay ignored while dead/spectating — without breaking names
+    # that legitimately end in a bracketed tag.
+    return n in targets or _NAME_SUFFIX_RE.sub("", n).strip() in targets
 
 
 _RELOAD_KEYS = frozenset({
