@@ -1,4 +1,5 @@
 import json, os, re, sys, tempfile, subprocess, time, zipfile
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from app._build_version import CURRENT_VERSION
@@ -75,6 +76,20 @@ def _http_json(url):
     req = Request(url, headers=headers)
     with urlopen(req, timeout=15) as r:
         return json.load(r)
+
+def _latest_stable_release():
+    """Return the newest stable release, or None if the repo has none at all.
+
+    Uses /releases/latest, which ignores pagination and returns 404 when the
+    repo has no non-draft, non-prerelease release.
+    """
+    url = f"https://api.github.com/repos/{OWNER}/{REPO}/releases/latest"
+    try:
+        return _http_json(url)
+    except HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
 
 def _download(url, dest, on_progress=None):
     req = Request(url, headers={**_gh_headers(), "Accept": "application/octet-stream"})
@@ -182,8 +197,17 @@ def maybe_update(prereleases=False):
                     None
                 )
                 if rel is None:
-                    _log_setup.get().info("[Updater] No stable release found.")
-                    return False
+                    # None on the first page — check the whole repo before
+                    # falling back, so accumulated prereleases can't push a
+                    # stable release out of the paginated listing unnoticed.
+                    rel = _latest_stable_release()
+                if rel is None:
+                    # Bootstrap: the repo has no stable release at all yet —
+                    # fall back to the newest prerelease.
+                    _log_setup.get().info(
+                        "[Updater] No stable release exists yet — falling back to newest prerelease."
+                    )
+                    rel = rel_data[0]
         elif isinstance(rel_data, dict):
             rel = rel_data
         else:
