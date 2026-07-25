@@ -28,7 +28,19 @@ _TS_FIND_RE = re.compile(TS_CORE)
 
 
 def iter_chat_entries(buffer: str):
+    """Yield complete chat entries found in buffer.
+
+    An entry is complete when it is terminated by the next timestamp or by a
+    newline. A match that runs to the very end of an unterminated buffer is
+    NOT yielded: the regex's `\\Z` alternative matches unconditionally there,
+    so a line that is still being written would otherwise be reported as
+    finished — translating a half-message and discarding the rest. Holding it
+    back leaves it in the caller's buffer until the remainder arrives.
+    """
+    complete = buffer.endswith(("\n", "\r"))
     for m in CHAT_ENTRY_RE.finditer(buffer):
+        if m.end() == len(buffer) and not complete:
+            return
         yield (
             m.group('dt'),
             m.group('scope'),
