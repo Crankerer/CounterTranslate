@@ -24,11 +24,11 @@ if defined BUILD_VERSION (
     set CURRENT_VERSION=!BUILD_VERSION!
 ) else (
     for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMMddHHmm\""') do set BUILDNUMBER=%%A
-    set CURRENT_VERSION=0.18.!BUILDNUMBER!
+    set CURRENT_VERSION=0.19.!BUILDNUMBER!
 )
 
 :: Windows file version always generated from current time (4 parts, each <= 65535)
-for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMM.ddmm\""') do set WIN_VERSION=0.18.%%A
+for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format \"yyMM.ddmm\""') do set WIN_VERSION=0.19.%%A
 
 echo CURRENT_VERSION = %CURRENT_VERSION%
 echo WIN_VERSION     = %WIN_VERSION%
