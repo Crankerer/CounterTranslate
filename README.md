@@ -25,11 +25,13 @@ It works by reading the `console.log` file that CS2 writes on its own, sending n
 
 ---
 
-## Is this safe? Will I get banned?
+## Is this a cheat? Will I get banned?
 
-**No — there is no risk of a ban.**
+**CounterTranslate is not a cheat, and there is nothing in it for anti-cheat to detect.**
 
-CounterTranslate only reads the `console.log` file that CS2 writes by itself. It does **not** attach to the game process, modify game mechanics, inject any code, or communicate with CS2 in any way. VAC and other anti-cheat systems only detect interference with the running process — CounterTranslate is invisible to them because it is simply a log-file reader.
+It only reads `console.log` — a plain text file that CS2 writes by itself once you enable Valve's own `-condebug` launch option. It does **not** attach to the game process, read game memory, inject code, or send anything to CS2. It is an ordinary always-on-top window, not an overlay hooked into the game's rendering. And it gives you no gameplay advantage: it translates chat text that is already on your screen.
+
+In other words, there is no interference with the running game for VAC to see. What is ultimately permitted is always Valve's call — but CounterTranslate does none of the things anti-cheat looks for.
 
 ---
 
@@ -147,6 +149,10 @@ All settings are saved immediately and take effect without restarting the app.
 - Check that the API key is entered correctly
 - Check that your OpenAI account has sufficient credit
 - If using a custom endpoint, make sure the model name matches what the server expects
+
+**The app started with default settings / my settings are gone**
+- Look for a `config.json.bak` next to `CounterTranslate.exe`. If `config.json` could not be read (usually a manual edit with a JSON syntax error), it is moved aside to `.bak` and defaults are used instead of overwriting it — your old values are still in that file.
+- `countertranslate.log` records the reason as an `ERROR` line.
 
 **Still stuck?**
 - Check `countertranslate.log` in the installation folder (next to `CounterTranslate.exe`) — it records the startup configuration, detected chat lines, and API errors. Please attach it when reporting a bug.
