@@ -33,6 +33,12 @@ def should_ignore(name: str, ignore_names: list[str]) -> bool:
     return n in targets or _NAME_SUFFIX_RE.sub("", n).strip() in targets
 
 
+# The pool has 3 workers and an unbounded submit queue, so a slow or retrying
+# API lets work pile up. A translation this old is worthless in a live match —
+# drop it when the worker picks it up so the backlog drains instead of
+# trickling stale lines into the HUD minutes later.
+_MAX_QUEUE_AGE_S = 20.0
+
 _RELOAD_KEYS = frozenset({
     "gpt_api", "gpt_model", "temperature",
     "no_translate_langs", "target_lang",
@@ -129,7 +135,15 @@ def start_tail_thread(
                         def _translate_worker(
                             dt=dt, scope=scope, name=name, orig=orig_msg,
                             snap=snap, prompt=snap_prompt,
+                            submitted=time.monotonic(),
                         ):
+                            waited = time.monotonic() - submitted
+                            if waited > _MAX_QUEUE_AGE_S:
+                                _log_setup.get().debug(
+                                    "[skipped_stale] waited %.1fs — %s: %s",
+                                    waited, name, orig
+                                )
+                                return
                             try:
                                 full_text = call_chatgpt(
                                     snap["gpt_api"], snap["gpt_model"],

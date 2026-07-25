@@ -40,7 +40,7 @@ def build_system_prompt(skip_langs: list[str], target_lang: str = "German") -> s
 
 def call_chatgpt(
     api_url: str, model: str, api_key: str, temperature: float,
-    name: str, message: str, system_prompt: str, timeout_s: float = 15.0,
+    name: str, message: str, system_prompt: str, timeout_s: float = 10.0,
 ) -> str:
     """Non-streaming chat-completions request. Returns the response text, or "" on error/empty."""
     api_url = (api_url or "").strip() or DEFAULT_API_URL

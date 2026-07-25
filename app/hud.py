@@ -5,6 +5,8 @@ import time
 import tkinter as tk
 from queue import Empty
 
+from . import log_setup as _log_setup
+
 class TkHud:
     COLORS = {
         "dt": "#a0a0a0",
@@ -309,24 +311,26 @@ class TkHud:
     _STATUS_FILLS = {"green": "#44dd44", "yellow": "#ffcc00", "red": "#ff4444", "blue": "#4488ff"}
 
     def set_status_color(self, color: str, tooltip: str = ""):
-        fill = self._STATUS_FILLS.get(color, "#555555")
-        def _apply():
-            self._status_color = color
-            self._status_canvas_n.itemconfig(self._status_dot_n, fill=fill)
-            self._status_canvas_c.itemconfig(self._status_dot_c, fill=fill)
-            self._tooltip_text = tooltip
-            self._update_dot_visibility()
+        """Thread-safe. Routed through the queue so Tk is only ever touched
+        from the main thread (the status checker calls this from its own)."""
         try:
-            self.root.after(0, _apply)
+            self.queue.put(("status", {"color": color, "tooltip": tooltip}))
         except Exception:
             pass
 
+    def _apply_status(self, color: str, tooltip: str = ""):
+        """Apply a queued status update. Tk thread only."""
+        self._status_color = color
+        fill = self._STATUS_FILLS.get(color, "#555555")
+        self._status_canvas_n.itemconfig(self._status_dot_n, fill=fill)
+        self._status_canvas_c.itemconfig(self._status_dot_c, fill=fill)
+        self._tooltip_text = tooltip
+        self._update_dot_visibility()
+
     def set_status_visible(self, enabled: bool):
+        """Tk thread only (called from the settings save handler)."""
         self._status_setting_enabled = enabled
-        try:
-            self.root.after(0, self._update_dot_visibility)
-        except Exception:
-            pass
+        self._update_dot_visibility()
 
     def set_topmost(self, enabled: bool):
         try:
@@ -374,23 +378,31 @@ class TkHud:
     def _ticker_tick(self):
         if not self._ticker_active:
             return
-        now = time.monotonic()
-        elapsed = now - self._ticker_last_t
-        self._ticker_last_t = now
-        # _ticker_px is "pixels per frame at 60 fps" → convert to px/s
-        self._ticker_accum += self._ticker_px * 60.0 * elapsed
-        dx = int(self._ticker_accum)
-        self._ticker_accum -= dx
-        if dx:
-            self._ticker_canvas.move("ticker", -dx, 0)
-            for item in self._ticker_canvas.find_withtag("ticker"):
-                try:
-                    bbox = self._ticker_canvas.bbox(item)
-                    if bbox and bbox[2] < 0:
-                        self._ticker_canvas.delete(item)
-                except Exception:
-                    pass
-        self.root.after(self._TICKER_MS, self._ticker_tick)
+        try:
+            now = time.monotonic()
+            elapsed = now - self._ticker_last_t
+            self._ticker_last_t = now
+            # _ticker_px is "pixels per frame at 60 fps" → convert to px/s
+            self._ticker_accum += self._ticker_px * 60.0 * elapsed
+            dx = int(self._ticker_accum)
+            self._ticker_accum -= dx
+            if dx:
+                self._ticker_canvas.move("ticker", -dx, 0)
+                for item in self._ticker_canvas.find_withtag("ticker"):
+                    try:
+                        bbox = self._ticker_canvas.bbox(item)
+                        if bbox and bbox[2] < 0:
+                            self._ticker_canvas.delete(item)
+                    except Exception:
+                        pass
+        except Exception:
+            _log_setup.get().exception("[hud] ticker frame failed")
+        finally:
+            # Re-arm unconditionally so one bad frame can't stop the ticker.
+            try:
+                self.root.after(self._TICKER_MS, self._ticker_tick)
+            except tk.TclError:
+                pass
 
     def _ticker_add(self, dt: str, scope: str, name: str, msg: str,
                     orig: str = "", lang: str = ""):
@@ -482,19 +494,33 @@ class TkHud:
             self._line_count -= 200
 
     def _poll(self):
+        # Every exit path must re-arm the timer: an unhandled error here used to
+        # kill the callback chain outright, silently freezing the HUD for the
+        # rest of the session. A bad item is logged and dropped instead.
         try:
             while True:
-                typ, payload = self.queue.get_nowait()
-                if typ == "structured":
-                    self._append_struct(**payload)
-                elif typ == "line":
-                    self._append_line(payload)
-                elif typ == "error":
-                    self._append_line(payload, tag="err")
-                self.queue.task_done()
-        except Empty:
-            pass
-        self.root.after(33, self._poll)
+                try:
+                    typ, payload = self.queue.get_nowait()
+                except Empty:
+                    break
+                try:
+                    if typ == "structured":
+                        self._append_struct(**payload)
+                    elif typ == "line":
+                        self._append_line(payload)
+                    elif typ == "error":
+                        self._append_line(payload, tag="err")
+                    elif typ == "status":
+                        self._apply_status(**payload)
+                except Exception:
+                    _log_setup.get().exception("[hud] failed to render %s item", typ)
+                finally:
+                    self.queue.task_done()
+        finally:
+            try:
+                self.root.after(33, self._poll)
+            except tk.TclError:
+                pass  # root destroyed — shutting down
 
     def _append_line(self, line: str, tag="meta"):
         self.text.configure(state="normal")

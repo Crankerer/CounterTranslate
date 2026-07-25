@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, threading
 from pathlib import Path
 from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
@@ -93,13 +93,14 @@ def main():
             print(t("abort.no_folder"))
             return
 
-        log_path = Path(base) / "game" / "csgo" / "console.log"
-        log_path_str = os.path.normpath(str(log_path))
+        # Keep this a normalized str: it is handed to the tailer, which compares
+        # it against the str from config on every hot-reload.
+        log_path = os.path.normpath(str(Path(base) / "game" / "csgo" / "console.log"))
 
-        cfg["log_path"] = log_path_str
+        cfg["log_path"] = log_path
         try:
             save_config(CONFIG_FILENAME, cfg)
-            print(t("cfg.log_saved", path=CONFIG_FILENAME, log=log_path_str))
+            print(t("cfg.log_saved", path=CONFIG_FILENAME, log=log_path))
         except Exception as e:
             print(t("cfg.save_fail", err=e))
     else:
@@ -229,31 +230,35 @@ def main():
             self._orig = original  # None in --noconsole builds
             self._q = queue
             self._buf = ""
+            # print() issues one write per argument plus one for the newline,
+            # and the tail thread, three pool workers and the Tk thread all
+            # print. Without this lock, lines from different threads splice
+            # into each other in both the HUD and the log file.
+            self._lock = threading.Lock()
 
         def write(self, text):
-            if self._orig is not None:
-                try:
-                    self._orig.write(text)
-                except Exception:
-                    pass
-            self._buf += text
-            while "\n" in self._buf:
-                line, self._buf = self._buf.split("\n", 1)
-                if line:
+            with self._lock:
+                if self._orig is not None:
                     try:
-                        is_err = line.startswith(("[LLM-Error]", "[Error]"))
+                        self._orig.write(text)
+                    except Exception:
+                        pass
+                self._buf += text
+                while "\n" in self._buf:
+                    line, self._buf = self._buf.split("\n", 1)
+                    if not line:
+                        continue
+                    is_err = line.startswith(("[LLM-Error]", "[Error]"))
+                    try:
                         log = _log_setup.get()
-                        if is_err:
-                            log.error(line)
-                        else:
-                            log.info(line)
+                        log.error(line) if is_err else log.info(line)
                     except Exception:
                         pass
                     try:
-                        is_err = line.startswith(("[LLM-Error]", "[Error]"))
                         self._q.put(("error" if is_err else "line", line))
                     except Exception:
                         pass
+            return len(text)
 
         def flush(self):
             if self._orig is not None:
