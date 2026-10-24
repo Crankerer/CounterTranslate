@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog, ttk
 from app.i18n import t
-from app.config import DEFAULT_API_URL
+from app.config import DEFAULT_API_URL, DEFAULT_MODEL
 
 
 def _apply_round_region(win, radius: int = 20) -> None:
@@ -470,7 +470,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     _model_row = tk.Frame(body, bg=BG)
     tk.Label(_model_row, text=t("settings.field.model"), fg=FG_LABEL, bg=BG,
              font=FONT_SMALL, anchor="w", width=34).pack(side="left")
-    _model_var = tk.StringVar(value=cfg.get("gpt_model", "gpt-4.1-nano"))
+    _model_var = tk.StringVar(value=cfg.get("gpt_model", DEFAULT_MODEL))
     tk.Entry(_model_row, bg=ENTRY_BG, fg=FG_VALUE, insertbackground=FG_VALUE,
              relief="flat", bd=3, highlightthickness=1,
              highlightcolor=FG_ACCENT, highlightbackground="#2a2a2a",
@@ -512,7 +512,7 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     def _save():
         new_cfg = _collect()
         if not new_cfg["gpt_api"]:
-            new_cfg["gpt_model"] = "gpt-4.1-nano"
+            new_cfg["gpt_model"] = DEFAULT_MODEL
         if on_save:
             on_save(new_cfg)
         win.destroy()

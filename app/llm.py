@@ -8,7 +8,13 @@ from . import log_setup as _log_setup
 from .config import DEFAULT_API_URL
 
 _NO_TEMP_MODELS = frozenset({"o1", "o1-mini", "o1-preview", "o3", "o3-mini", "o4-mini"})
-_O_SERIES_RE = re.compile(r'^o\d', re.IGNORECASE)
+# o-series and GPT-5 reasoning models reject any non-default temperature.
+_O_SERIES_RE = re.compile(r'^(o\d|gpt-5)', re.IGNORECASE)
+
+
+# Original GPT-5 family (not gpt-5.x): reasons by default, which adds seconds
+# of latency per chat line. "minimal" keeps it near non-reasoning speed.
+_MINIMAL_REASONING_RE = re.compile(r'^gpt-5(-mini|-nano)?(-\d{4}-\d{2}-\d{2})?$', re.IGNORECASE)
 
 
 def _supports_temperature(model: str) -> bool:
@@ -61,6 +67,8 @@ def call_chatgpt(
     }
     if _supports_temperature(model):
         payload["temperature"] = float(temperature)
+    if _MINIMAL_REASONING_RE.match(model.strip()):
+        payload["reasoning_effort"] = "minimal"
 
     headers = {"Authorization": f"Bearer {api_key}"}
     try:

@@ -128,8 +128,8 @@ Click the ⛭ icon in the top-right of the overlay to open the settings dialog:
 | **HUD font size** | Adjust font size (7–28 pt) with − / + buttons or reset to default; also adjustable with Ctrl+MouseWheel directly on the overlay |
 | **Always on top** | Keep the overlay above all other windows; uncheck to allow other windows to cover it |
 | **API URL** | Chat completions endpoint (default: OpenAI; customisable for local models) |
-| **Model** | LLM model (locked to `gpt-4.1-nano` for the official OpenAI URL; free text for custom endpoints) |
-| **Temperature** | LLM temperature — lower values produce more literal translations |
+| **Model** | LLM model (locked to `gpt-5-nano` for the official OpenAI URL; free text for custom endpoints) |
+| **Temperature** | LLM temperature — lower values produce more literal translations (ignored by reasoning models such as `gpt-5-nano`) |
 | **API key** | Your OpenAI API key (masked; toggle visibility with the eye icon) |
 | **console.log path** | Path to the CS2 log file |
 | **Poll interval (ms)** | How often the log file is checked for new lines |

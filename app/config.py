@@ -3,6 +3,11 @@ import os, json, tempfile, threading, time
 from . import log_setup as _log_setup
 
 DEFAULT_API_URL = "https://crimson-dog-44043.zap.cloud/v1/chat/completions"
+DEFAULT_MODEL = "gpt-5-nano"
+
+# Models OpenAI has shut down. A config still naming one is moved to
+# DEFAULT_MODEL on load, otherwise every request would fail.
+_RETIRED_MODELS = frozenset({"gpt-4.1-nano", "gpt-4.1-nano-2025-04-14"})
 
 # Guards save_config so two writers can never interleave.
 _SAVE_LOCK = threading.Lock()
@@ -26,7 +31,7 @@ DEFAULTS = {
     "llm_api": "http://localhost:1234/v1/chat/completions",
     "llm_model": "local-model",
     "gpt_api": "",
-    "gpt_model": "gpt-4.1-nano",
+    "gpt_model": DEFAULT_MODEL,
     "temperature": 0.2,
     "no_translate_langs": ["de"],
     "target_lang": "German",
@@ -120,7 +125,12 @@ def load_config(path: str) -> dict:
             cfg["log_path"] = norm_lp
             changed = True
 
-    # 5) Write back the migrated config if anything changed
+    # 5) Replace a retired model
+    if (cfg.get("gpt_model") or "").strip().lower() in _RETIRED_MODELS:
+        cfg["gpt_model"] = DEFAULT_MODEL
+        changed = True
+
+    # 6) Write back the migrated config if anything changed
     if changed:
         try:
             save_config(path, cfg)
