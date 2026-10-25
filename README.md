@@ -41,7 +41,7 @@ It reads the `console.log` that CS2 writes itself. It never attaches to the game
    ```
 2. **Download** the latest `CounterTranslate-windows-x64.zip` from the [Releases page](https://github.com/Crankerer/CounterTranslate/releases), extract it and run `CounterTranslate.exe`.
 3. **Point it at CS2.** On first launch, pick your `Counter-Strike Global Offensive` folder — the path to `console.log` is filled in for you.
-4. **Add your key.** Click ⛭ in the overlay's top bar and paste your key into **API key** (see [API key](#api-key)).
+4. **Add your key.** Click ⛭ in the overlay's top bar and paste your CounterTranslate key (`ct-…`) into **API key**. Using your own OpenAI key instead? See [API key](#api-key).
 5. **Play.** Translations appear in the overlay as soon as someone writes in chat.
 
 > [!NOTE]
@@ -49,15 +49,16 @@ It reads the `console.log` that CS2 writes itself. It never attaches to the game
 
 ### API key
 
-CounterTranslate sends each chat message to an OpenAI-compatible chat-completions endpoint:
+**By default, translations go through the CounterTranslate proxy.** Leave **API URL** empty and enter your CounterTranslate key (`ct-…`) as the **API key** — that's all. The [status dot](#status-dot) shows whether the proxy is reachable and how many days your key has left.
 
-| You have | API URL setting | API key setting |
-|----------|-----------------|-----------------|
-| A CounterTranslate key (`ct-…`) | leave empty — the built-in CounterTranslate endpoint is used | your `ct-…` key |
-| Your own OpenAI key (`sk-…`) | `https://api.openai.com/v1/chat/completions` | your `sk-…` key from [platform.openai.com](https://platform.openai.com/api-keys) |
-| Another OpenAI-compatible server (e.g. a local model in LM Studio) | that server's chat-completions URL | whatever the server expects |
+**Prefer your own provider?** Enter its URL in **API URL**, and the **API key** field then takes that provider's key instead:
 
-When a custom API URL is set, a **Model** field appears so you can choose the model name.
+| Provider | API URL | API key |
+|----------|---------|---------|
+| OpenAI | `https://api.openai.com/v1/chat/completions` | your own `sk-…` key from [platform.openai.com](https://platform.openai.com/api-keys) |
+| Any other OpenAI-compatible server (e.g. a local model in LM Studio) | that server's chat-completions URL | whatever the server expects |
+
+With a custom API URL, a **Model** field appears so you can choose the model, and the status dot turns blue (the proxy is no longer used, so it isn't checked).
 
 ---
 
@@ -84,13 +85,13 @@ Click − in the top bar (in either mode) to send the overlay to the taskbar, li
 
 ### Status dot
 
-The dot in the top-left corner shows the health of the translation endpoint. Hover over it for details such as key validity and days remaining.
+The dot in the top-left corner shows the health of the CounterTranslate proxy. Hover over it for details such as key validity and days remaining.
 
 | Colour | Meaning |
 |--------|---------|
-| 🟢 green | Endpoint reachable, key valid |
-| 🟡 yellow | Endpoint reachable but degraded |
-| 🔴 red | Endpoint unreachable, or key missing / invalid / expired |
+| 🟢 green | Proxy reachable, key valid |
+| 🟡 yellow | Proxy reachable but degraded |
+| 🔴 red | Proxy unreachable, or key missing / invalid / expired |
 | 🔵 blue | A custom API URL is in use (not checked) |
 
 Yellow and red are always shown, even if you hide the dot in the settings.
@@ -133,13 +134,13 @@ On startup the app checks GitHub for a newer release and asks before downloading
 | **Ticker speed** | Scroll speed of the ticker |
 | **HUD opacity** | 20 % (nearly invisible) to 100 % (opaque) |
 | **HUD font size** | 7–28 pt, with a reset button |
-| **Proxy-Status** | Current endpoint status; hover for details |
+| **Proxy-Status** | Current proxy status; hover for details |
 | **Show status dot in HUD** | Hide the dot when everything is fine |
 | **Always on top** | Keep the overlay above other windows |
-| **API URL** | Empty = built-in CounterTranslate endpoint; otherwise any OpenAI-compatible chat-completions URL |
+| **API URL** | Empty = CounterTranslate proxy (default); otherwise your own OpenAI-compatible chat-completions URL |
 | **Model** | Only shown with a custom API URL |
 | **Temperature** | Lower = more literal translations (ignored by reasoning models such as `gpt-5-nano`) |
-| **API key** | Masked; click the eye icon to reveal it. Leaving it empty keeps the stored key |
+| **API key** | Your `ct-…` key for the proxy, or your own provider's key with a custom API URL. Masked; click the eye icon to reveal it. Leaving it empty keeps the stored key |
 | **console.log path** | Location of the CS2 log file |
 | **Poll interval (ms)** | How often the log file is checked for new lines |
 
@@ -160,7 +161,7 @@ With `-condebug` set, CS2 writes everything shown in its console — including c
 
 **Does it touch the game?** No. CounterTranslate does not attach to the CS2 process, read its memory, inject code or hook its rendering. It only reads a text file that CS2 writes through Valve's own launch option, and displays an ordinary window on top. Whether third-party tools are allowed is always up to Valve, so use CounterTranslate at your own risk.
 
-**Privacy:** chat messages and player names are sent to the API endpoint you configure, and nothing else.
+**Privacy:** chat messages and player names are sent to the CounterTranslate proxy — or, with a custom API URL, directly to your own provider — and nothing else.
 
 ---
 
@@ -171,13 +172,14 @@ With `-condebug` set, CS2 writes everything shown in its console — including c
 
 - Check that `-condebug` is set in the Steam launch options, and restart CS2 once.
 - Check that `console.log` exists at the path shown in the settings.
-- Watch the status dot: red means the endpoint can't be reached or the key is invalid.
+- Watch the status dot: red means the proxy can't be reached or your key is invalid.
 </details>
 
 <details>
 <summary><b>Translation errors / API errors</b></summary>
 
-- Check that the API key is correct and matches the API URL (see [API key](#api-key)).
+- Check that the key matches the API URL: a `ct-…` key with an empty API URL (proxy), your own provider's key with a custom URL (see [API key](#api-key)).
+- Hover over the status dot: it shows whether your `ct-…` key is valid or expired.
 - With your own OpenAI key: make sure the account has credit.
 - With a custom endpoint: make sure the model name is what the server expects.
 </details>
