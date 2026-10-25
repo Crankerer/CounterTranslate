@@ -35,6 +35,7 @@ class TkHud:
         self._line_count = 0
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
         self._font = font
+        self._saved_geometry = geometry
         self._compact = False
         self._ticker_active = False
         self._ticker_px = max(1, ticker_speed)
@@ -221,10 +222,17 @@ class TkHud:
         return "break"
 
     def _resize_end(self, event):
-        if self.on_geometry_change:
-            self.on_geometry_change(self.root.geometry())
+        self._save_geometry()
         self._round_corners()
         return "break"
+
+    def _save_geometry(self):
+        # <ButtonRelease-1> fires for every click on any child widget; only
+        # persist (an fsync'd config write) when the window actually changed.
+        geo = self.root.geometry()
+        if geo != self._saved_geometry and self.on_geometry_change:
+            self._saved_geometry = geo
+            self.on_geometry_change(geo)
 
     # ── rounded corners ──────────────────────────────────────────────────────
 
@@ -464,8 +472,8 @@ class TkHud:
         self.root.geometry(f"+{x}+{y}")
 
     def _on_release(self, event):
-        if not self._compact and self.on_geometry_change:
-            self.on_geometry_change(self.root.geometry())
+        if not self._compact:
+            self._save_geometry()
 
     def _on_mousewheel(self, event):
         delta = -1 if event.delta > 0 else 1
