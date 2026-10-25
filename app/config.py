@@ -1,13 +1,50 @@
 import os, json, tempfile, threading, time
+from datetime import date
 
 from . import log_setup as _log_setup
 
 DEFAULT_API_URL = "https://crimson-dog-44043.zap.cloud/v1/chat/completions"
 DEFAULT_MODEL = "gpt-5-nano"
 
-# Models OpenAI has shut down. A config still naming one is moved to
-# DEFAULT_MODEL on load, otherwise every request would fail.
-_RETIRED_MODELS = frozenset({"gpt-4.1-nano", "gpt-4.1-nano-2025-04-14"})
+# OpenAI shutdown dates (developers.openai.com/api/docs/deprecations). From
+# its date on, a config still naming one of these is moved to DEFAULT_MODEL
+# on load — otherwise every request would fail. Announced shutdowns can be
+# listed ahead of time; they only take effect once the date has passed.
+_RETIRED_MODELS = {
+    "chatgpt-4o-latest": date(2026, 2, 17),
+    "gpt-5-chat-latest": date(2026, 7, 23),
+    "gpt-5.1-chat-latest": date(2026, 7, 23),
+    "gpt-5.1-codex-mini": date(2026, 7, 23),
+    "gpt-5.2-chat-latest": date(2026, 8, 10),
+    "gpt-5.3-chat-latest": date(2026, 8, 10),
+    "gpt-4o-2024-05-13": date(2026, 10, 23),
+    "gpt-4.1-nano": date(2026, 10, 23),
+    "gpt-4.1-nano-2025-04-14": date(2026, 10, 23),
+    "gpt-5": date(2026, 12, 11),
+    "gpt-5-2025-08-07": date(2026, 12, 11),
+    "gpt-5-mini": date(2026, 12, 11),
+    "gpt-5-mini-2025-08-07": date(2026, 12, 11),
+    "gpt-5-nano": date(2026, 12, 11),
+    "gpt-5-nano-2025-08-07": date(2026, 12, 11),
+    "gpt-4o": date(2027, 1, 14),
+    "gpt-4o-2024-08-06": date(2027, 1, 14),
+    "gpt-4o-2024-11-20": date(2027, 1, 14),
+    "gpt-4o-mini": date(2027, 1, 14),
+    "gpt-4o-mini-2024-07-18": date(2027, 1, 14),
+    "gpt-4.1": date(2027, 1, 14),
+    "gpt-4.1-2025-04-14": date(2027, 1, 14),
+    "gpt-4.1-mini": date(2027, 1, 14),
+    "gpt-4.1-mini-2025-04-14": date(2027, 1, 14),
+    "gpt-5.1": date(2027, 4, 1),
+    "gpt-5.1-2025-11-13": date(2027, 4, 1),
+    "gpt-5.4-nano": date(2027, 4, 1),
+    "gpt-5.4-nano-2026-03-17": date(2027, 4, 1),
+}
+
+
+def is_retired(model: str, today: date | None = None) -> bool:
+    shutdown = _RETIRED_MODELS.get((model or "").strip().lower())
+    return shutdown is not None and (today or date.today()) >= shutdown
 
 # Guards save_config so two writers can never interleave.
 _SAVE_LOCK = threading.Lock()
@@ -134,7 +171,7 @@ def load_config(path: str, write_back: bool = True) -> dict:
             changed = True
 
     # 5) Replace a retired model
-    if (cfg.get("gpt_model") or "").strip().lower() in _RETIRED_MODELS:
+    if is_retired(cfg.get("gpt_model")):
         cfg["gpt_model"] = DEFAULT_MODEL
         changed = True
 
