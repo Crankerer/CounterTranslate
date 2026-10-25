@@ -272,7 +272,10 @@ class TkHud:
             return
         try:
             import ctypes
+            GWL_STYLE = -16
             GWL_EXSTYLE = -20
+            WS_MINIMIZEBOX = 0x00020000
+            WS_SYSMENU = 0x00080000
             WS_EX_APPWINDOW = 0x00040000
             WS_EX_TOOLWINDOW = 0x00000080
             hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
@@ -281,6 +284,15 @@ class TkHud:
             style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
             style = (style | WS_EX_APPWINDOW) & ~WS_EX_TOOLWINDOW
             ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+            # Borderless windows lack a minimize box, so Windows ignores a
+            # click on their taskbar button. With it, the click toggles
+            # minimize/restore like any other window. No caption is added.
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style | WS_MINIMIZEBOX | WS_SYSMENU)
+            # Style changes only take effect once the frame is recomputed.
+            SWP_NOSIZE, SWP_NOMOVE, SWP_NOZORDER, SWP_FRAMECHANGED = 0x1, 0x2, 0x4, 0x20
+            ctypes.windll.user32.SetWindowPos(
+                hwnd, 0, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED)
             # Hide/show cycle forces the taskbar to register the new style.
             # Icon must be re-applied after deiconify — the cycle resets it.
             def _reshow():
