@@ -171,15 +171,29 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
         row.pack(fill="x", pady=(4, 0))
         tk.Label(row, text=label, fg=FG_LABEL, bg=BG,
                  font=FONT_SMALL, anchor="w", width=34).pack(side="left")
+        # A dropdown rather than radio buttons: five languages no longer fit
+        # in one row beside the label column (the last one was cut off).
+        langs = [("en", "English"), ("de", "Deutsch"), ("fr", "Français"),
+                 ("pl", "Polski"), ("ru", "Русский")]
+        names = dict(langs)
+        codes = {lbl: code for code, lbl in langs}
         var = tk.StringVar(value=cfg.get(key, "en"))
         entries[key] = var
-        for code, lbl in [("en", "English"), ("de", "Deutsch"), ("fr", "Français"),
-                          ("pl", "Polski"), ("ru", "Русский")]:
-            tk.Radiobutton(row, text=lbl, variable=var, value=code,
-                           command=lambda c=code: _on_lang_change(c),
-                           bg=BG, fg=FG_VALUE, selectcolor="#1a1a1a",
-                           activebackground=BG, activeforeground=FG_VALUE,
-                           font=FONT).pack(side="left", padx=(0, 10))
+        _setup_combobox_style()
+        shown = tk.StringVar(value=names.get(var.get(), "English"))
+        box = ttk.Combobox(row, textvariable=shown, values=[lbl for _, lbl in langs],
+                           state="readonly", style="Dark.TCombobox", font=FONT, width=28)
+        box.pack(side="left", fill="x", expand=True)
+
+        def _selected(_event):
+            code = codes[shown.get()]
+            if code != var.get():
+                var.set(code)
+                # Deferred: the rebuild destroys this window, which must not
+                # happen inside the combobox's own event handler. Scheduled on
+                # the parent — a callback owned by `win` would outlive it.
+                parent_root.after_idle(lambda: _on_lang_change(code))
+        box.bind("<<ComboboxSelected>>", _selected)
 
     _TARGET_LANG_OPTIONS = [
         "English", "German", "French", "Spanish", "Portuguese",
