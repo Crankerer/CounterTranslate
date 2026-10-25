@@ -1,6 +1,6 @@
 import os, re, time, threading
 from concurrent.futures import ThreadPoolExecutor
-from .util import ts, normalize
+from .util import ts, normalize, primary_lang_tag
 from .parser import iter_chat_entries, trim_before_last_ts
 from .file_follow import open_follow
 from .llm import build_system_prompt, call_chatgpt
@@ -22,8 +22,17 @@ def _parse_lang_prefix(text: str) -> tuple[str, str]:
 _NAME_SUFFIX_RE = re.compile(r'(?:\s*\[[^\[\]]*\])+\s*$')
 
 
-def should_ignore(name: str, ignore_names: list[str]) -> bool:
-    targets = {normalize(x).casefold() for x in ignore_names}
+def ignore_targets(ignore_names: list[str]) -> frozenset[str]:
+    """Normalize ignore_names once per config load for should_ignore."""
+    return frozenset(normalize(x).casefold() for x in ignore_names)
+
+
+def skip_lang_codes(skip_langs: list[str]) -> frozenset[str]:
+    return frozenset(primary_lang_tag(c) for c in skip_langs if c)
+
+
+def should_ignore(name: str, targets: frozenset[str]) -> bool:
+    """targets: the precomputed result of ignore_targets()."""
     if not targets:
         return False
     n = normalize(name).casefold()
@@ -69,7 +78,8 @@ def start_tail_thread(
 
         # Local config snapshot — updated on reload, never shared across threads
         current_cfg = dict(cfg)
-        current_ignore = list(ignore_names)
+        current_ignore = ignore_targets(ignore_names)
+        current_skip = skip_lang_codes(current_cfg.get("no_translate_langs", []))
         system_prompt = build_system_prompt(
             current_cfg.get("no_translate_langs", []),
             current_cfg.get("target_lang", "German"),
@@ -92,7 +102,8 @@ def start_tail_thread(
                         new_cfg = load_config(config_path, write_back=False)
                         if _translation_cfg(new_cfg) != _translation_cfg(current_cfg):
                             current_cfg = new_cfg
-                            current_ignore = current_cfg.get("ignore_names", [])
+                            current_ignore = ignore_targets(current_cfg.get("ignore_names", []))
+                            current_skip = skip_lang_codes(current_cfg.get("no_translate_langs", []))
                             system_prompt = build_system_prompt(
                                 current_cfg.get("no_translate_langs", []),
                                 current_cfg.get("target_lang", "German"),
@@ -135,7 +146,7 @@ def start_tail_thread(
 
                         def _translate_worker(
                             dt=dt, scope=scope, name=name, orig=orig_msg,
-                            snap=snap, prompt=snap_prompt,
+                            snap=snap, prompt=snap_prompt, skip_set=current_skip,
                             submitted=time.monotonic(),
                         ):
                             waited = time.monotonic() - submitted
@@ -165,10 +176,6 @@ def start_tail_thread(
                             lang, msg_clean = _parse_lang_prefix(full_text)
                             if not msg_clean:
                                 return
-                            skip_set = {
-                                (c or "").split("-")[0].strip().lower()
-                                for c in snap.get("no_translate_langs", []) if c
-                            }
                             if lang and lang in skip_set:
                                 _log_setup.get().debug(
                                     f"[skipped_lang] [{lang}] {name}: {orig}"
