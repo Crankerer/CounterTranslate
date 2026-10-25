@@ -1,174 +1,216 @@
+<div align="center">
+
+<img src="app/icon.png" alt="CounterTranslate logo" width="96">
+
 # CounterTranslate
 
-Transparent overlay for CS2 that automatically translates chat messages in real time — directly on your screen, without touching the game process at all.
+**Real-time chat translation for Counter-Strike 2, in a transparent overlay.**<br>
+Russian, Polish, Turkish, Chinese — read every message in your own language without alt-tabbing.
 
-![HUD Overlay](doc/main.png)
+[![Latest release](https://img.shields.io/github/v/release/Crankerer/CounterTranslate?include_prereleases&label=release)](https://github.com/Crankerer/CounterTranslate/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6)](#requirements)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
----
+<a href="doc/hud.png"><img src="doc/hud.png" alt="The CounterTranslate overlay showing CS2 chat messages in six languages, each translated into English with the original underneath" width="820"></a>
 
-## What is CounterTranslate?
+[Quick start](#quick-start) · [Features](#features) · [Shortcuts](#keyboard-shortcuts) · [Settings](#settings) · [How it works](#how-it-works) · [Troubleshooting](#troubleshooting) · [Development](#development)
 
-When enemies or teammates write in Russian, Romanian, Chinese, or any other language, the translation appears immediately as a semi-transparent overlay — without alt-tabbing, copy-pasting, or opening a separate window.
-
-It works by reading the `console.log` file that CS2 writes on its own, sending new chat lines to an LLM for translation, and displaying the result in a transparent always-on-top window.
-
-- All languages are detected and translated automatically
-- Transparent overlay, always on top — adjustable opacity
-- Your own language is never translated (default: German)
-- Specific players can be ignored
-- Compact/ticker mode: single scrolling line for minimal screen space
-- Font size adjustable with Ctrl+MouseWheel or in settings (with reset)
-- Configurable translation target language and skip list
-- Connection status dot showing the health of the translation endpoint (green = OK, yellow = degraded, red = unreachable or invalid key, blue = custom API URL in use) with hover details
-- Always-on-top mode toggleable in settings
-- Automatic update check on startup — asks for confirmation before downloading (compiled build only)
+</div>
 
 ---
 
-## Is this a cheat? Will I get banned?
+### ⚡ Instant
+New chat lines are picked up as CS2 writes them and translated within a second or two.
 
-**CounterTranslate is not a cheat, and there is nothing in it for anti-cheat to detect.**
+### 🌍 Every language
+The source language is detected automatically. Languages you already speak are skipped.
 
-It only reads `console.log` — a plain text file that CS2 writes by itself once you enable Valve's own `-condebug` launch option. It does **not** attach to the game process, read game memory, inject code, or send anything to CS2. It is an ordinary always-on-top window, not an overlay hooked into the game's rendering. And it gives you no gameplay advantage: it translates chat text that is already on your screen.
+### 🪶 Out of your way
+Transparent, always on top, draggable — or shrink it to a one-line ticker, or minimize it to the taskbar.
 
-In other words, there is no interference with the running game for VAC to see. What is ultimately permitted is always Valve's call — but CounterTranslate does none of the things anti-cheat looks for.
-
----
-
-## Requirements
-
-- Windows 10 or 11
-- CS2 via Steam
-- OpenAI API key (or any OpenAI-compatible endpoint)
+### 📄 Reads a log file, nothing else
+It reads the `console.log` that CS2 writes itself. It never attaches to the game process.
 
 ---
 
-## Setup
+## Quick start
 
-### Step 1 — Set the Steam launch option
-
-CS2 needs to be told to write a log file. This is a one-time launch option:
-
-1. Open Steam → Library → right-click **Counter-Strike 2** → **Properties**
-2. In the **Launch Options** field, enter:
+1. **Enable the CS2 log.** In Steam, right-click **Counter-Strike 2** → **Properties** → **Launch Options** and enter:
    ```
    -condebug
    ```
-3. Done — from the next CS2 launch onward the log file will be written automatically.
+2. **Download** the latest `CounterTranslate-windows-x64.zip` from the [Releases page](https://github.com/Crankerer/CounterTranslate/releases), extract it and run `CounterTranslate.exe`.
+3. **Point it at CS2.** On first launch, pick your `Counter-Strike Global Offensive` folder — the path to `console.log` is filled in for you.
+4. **Add your key.** Click ⛭ in the overlay's top bar and paste your key into **API key** (see [API key](#api-key)).
+5. **Play.** Translations appear in the overlay as soon as someone writes in chat.
 
-The file is usually located at:
-```
-C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\console.log
-```
-Adjust the path if your Steam library is on a different drive.
+> [!NOTE]
+> `console.log` is usually at `C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\console.log`. Restart CS2 once after setting `-condebug` so the file gets created.
 
----
+### API key
 
-### Step 2 — Get an OpenAI API key
+CounterTranslate sends each chat message to an OpenAI-compatible chat-completions endpoint:
 
-CounterTranslate needs an API key for translation:
+| You have | API URL setting | API key setting |
+|----------|-----------------|-----------------|
+| A CounterTranslate key (`ct-…`) | leave empty — the built-in CounterTranslate endpoint is used | your `ct-…` key |
+| Your own OpenAI key (`sk-…`) | `https://api.openai.com/v1/chat/completions` | your `sk-…` key from [platform.openai.com](https://platform.openai.com/api-keys) |
+| Another OpenAI-compatible server (e.g. a local model in LM Studio) | that server's chat-completions URL | whatever the server expects |
 
-1. Create an account or sign in at [platform.openai.com](https://platform.openai.com)
-2. Go to **API Keys** → **Create new secret key**
-3. Copy the key and keep it handy — you will enter it into CounterTranslate in a moment
-
-> If you prefer not to use OpenAI, you can enter any OpenAI-compatible endpoint in the settings — for example a local model running in LM Studio.
-
----
-
-### Step 3 — Download and launch CounterTranslate
-
-1. Download the latest release from the [Releases page](https://github.com/Crankerer/CounterTranslate/releases)
-2. Extract the ZIP
-3. Launch `CounterTranslate.exe`
-
-On **first launch**, CounterTranslate asks for the path to **console.log** — select the CS2 base folder (`Counter-Strike Global Offensive`) and the rest is filled in automatically.
-
-Then click the ⛭ icon in the overlay's top bar to open the settings and paste your **OpenAI API key** into the **API key** field. Without a key, chat messages cannot be translated.
+When a custom API URL is set, a **Model** field appears so you can choose the model name.
 
 ---
 
-## Usage
+## Features
 
-1. Start `CounterTranslate.exe` — the transparent overlay appears
-2. Launch CS2 and play
-3. Whenever someone writes in chat, the translation appears in the overlay
+### Full overlay
+
+Every message shows the translation first and the original underneath, tagged with the detected language. Team and all-chat scopes, dead and spectating players and all CS2 client languages are recognised.
+
+- Drag the window anywhere, resize it from the bottom-right corner
+- Adjustable opacity (F2 or the settings slider) and font size (Ctrl+MouseWheel)
+- Player names can be ignored, and languages you speak are never translated
+- Keeps your position, size, font and opacity between sessions
+
+### Compact ticker
+
+<a href="doc/compact.png"><img src="doc/compact.png" alt="Compact mode: a single-line ticker scrolling a translated message" width="820"></a>
+
+Click ⊟ to collapse the overlay into a single scrolling line that takes almost no screen space; ⊞ brings the full view back. The scroll speed is configurable.
+
+### Minimize to the taskbar
+
+Click − in the top bar (in either mode) to send the overlay to the taskbar, like any other window. Click its taskbar button to bring it back.
+
+### Status dot
+
+The dot in the top-left corner shows the health of the translation endpoint. Hover over it for details such as key validity and days remaining.
+
+| Colour | Meaning |
+|--------|---------|
+| 🟢 green | Endpoint reachable, key valid |
+| 🟡 yellow | Endpoint reachable but degraded |
+| 🔴 red | Endpoint unreachable, or key missing / invalid / expired |
+| 🔵 blue | A custom API URL is in use (not checked) |
+
+Yellow and red are always shown, even if you hide the dot in the settings.
+
+### Automatic updates
+
+On startup the app checks GitHub for a newer release and asks before downloading anything. Your `config.json` and log live outside the program folder, so they survive updates.
 
 ---
 
-## Keyboard Shortcuts
+## Keyboard shortcuts
 
 | Key | Action |
 |-----|--------|
-| `Escape` | Close the overlay |
-| `F1` | Toggle overlay visibility |
-| `F2` | Cycle opacity: 100 % → 80 % → 60 % → 40 % → 20 % → 100 % |
-| `Ctrl+MouseWheel` | Zoom font size (normal mode only) |
+| `F1` | Show / hide the overlay |
+| `F2` | Cycle opacity: 100 % → 80 % → 60 % → 40 % → 20 % |
+| `Ctrl` + `MouseWheel` | Font size (7–28 pt, full overlay only) |
+| `Escape` | Close CounterTranslate |
 
-The overlay can also be dragged to any position and resized using the handle in the bottom-right corner. Use the ⊟ button in the top bar to switch to compact/ticker mode, and ⊞ to switch back.
+| Button | Action |
+|--------|--------|
+| ⊟ / ⊞ | Switch to compact ticker / back to full overlay |
+| ⛭ | Open settings |
+| − | Minimize to the taskbar |
+| ✕ | Close CounterTranslate |
 
 ---
 
 ## Settings
 
-Click the ⛭ icon in the top-right of the overlay to open the settings dialog:
-
-![Settings](doc/settings.png)
+<a href="doc/settings.png"><img src="doc/settings.png" alt="The settings dialog with Interface, LLM / API and Log & Performance sections" width="560"></a>
 
 | Setting | Description |
 |---------|-------------|
-| **UI Language** | Language of the settings interface (English, German, French, Polish, Russian) |
-| **Translate into** | Target language for translations (e.g. `German`) |
-| **Skip langs** | Languages that are never translated (e.g. `de` for German) |
-| **Ignore players** | Player names whose messages are skipped |
-| **Compact mode** | Enable single-line scrolling ticker instead of the full overlay |
-| **Ticker speed** | Scrolling speed in the compact mode (px/frame at 60 fps) |
-| **HUD opacity** | Overlay transparency from 20 % (nearly invisible) to 100 % (opaque) |
-| **Status dot** | Show/hide the connection status indicator in the HUD topbar (yellow/red always shown regardless) |
-| **HUD font size** | Adjust font size (7–28 pt) with − / + buttons or reset to default; also adjustable with Ctrl+MouseWheel directly on the overlay |
-| **Always on top** | Keep the overlay above all other windows; uncheck to allow other windows to cover it |
-| **API URL** | Chat completions endpoint (default: OpenAI; customisable for local models) |
-| **Model** | LLM model (locked to `gpt-5-nano` for the official OpenAI URL; free text for custom endpoints) |
-| **Temperature** | LLM temperature — lower values produce more literal translations (ignored by reasoning models such as `gpt-5-nano`) |
-| **API key** | Your OpenAI API key (masked; toggle visibility with the eye icon) |
-| **console.log path** | Path to the CS2 log file |
+| **UI language** | Language of the app itself: English, Deutsch, Français, Polski, Русский |
+| **Translate into** | The language translations are written in, e.g. `English` or `German` |
+| **Skip langs** | Languages that are never translated — pick the ones you speak |
+| **Ignore players** | Comma-separated player names whose messages are skipped |
+| **Compact mode** | Start in the one-line ticker instead of the full overlay |
+| **Ticker speed** | Scroll speed of the ticker |
+| **HUD opacity** | 20 % (nearly invisible) to 100 % (opaque) |
+| **HUD font size** | 7–28 pt, with a reset button |
+| **Proxy-Status** | Current endpoint status; hover for details |
+| **Show status dot in HUD** | Hide the dot when everything is fine |
+| **Always on top** | Keep the overlay above other windows |
+| **API URL** | Empty = built-in CounterTranslate endpoint; otherwise any OpenAI-compatible chat-completions URL |
+| **Model** | Only shown with a custom API URL |
+| **Temperature** | Lower = more literal translations (ignored by reasoning models such as `gpt-5-nano`) |
+| **API key** | Masked; click the eye icon to reveal it. Leaving it empty keeps the stored key |
+| **console.log path** | Location of the CS2 log file |
 | **Poll interval (ms)** | How often the log file is checked for new lines |
 
-All settings are saved immediately and take effect without restarting the app.
+Changes take effect as soon as you click **Save** — no restart needed.
+
+---
+
+## How it works
+
+```
+CS2 ──writes──▶ console.log ──tail──▶ CounterTranslate ──HTTPS──▶ translation API
+                                             │
+                                             ▼
+                                      overlay window
+```
+
+With `-condebug` set, CS2 writes everything shown in its console — including chat — to `console.log`. CounterTranslate follows that file, picks out the chat lines, sends each message (and the sender's name) to the configured API, and shows the result in its own window.
+
+**Does it touch the game?** No. CounterTranslate does not attach to the CS2 process, read its memory, inject code or hook its rendering. It only reads a text file that CS2 writes through Valve's own launch option, and displays an ordinary window on top. Whether third-party tools are allowed is always up to Valve, so use CounterTranslate at your own risk.
+
+**Privacy:** chat messages and player names are sent to the API endpoint you configure, and nothing else.
 
 ---
 
 ## Troubleshooting
 
-**Nothing appears in the overlay**
-- Check that `-condebug` is set as a Steam launch option
-- Check that the `console.log` file exists at the configured path
-- Restart CS2 once so the log file is created
+<details>
+<summary><b>Nothing appears in the overlay</b></summary>
 
-**Translation errors / API errors**
-- Check that the API key is entered correctly
-- Check that your OpenAI account has sufficient credit
-- If using a custom endpoint, make sure the model name matches what the server expects
+- Check that `-condebug` is set in the Steam launch options, and restart CS2 once.
+- Check that `console.log` exists at the path shown in the settings.
+- Watch the status dot: red means the endpoint can't be reached or the key is invalid.
+</details>
 
-**The app started with default settings / my settings are gone**
-- Look for a `config.json.bak` next to `CounterTranslate.exe`. If `config.json` could not be read (usually a manual edit with a JSON syntax error), it is moved aside to `.bak` and defaults are used instead of overwriting it — your old values are still in that file.
-- `countertranslate.log` records the reason as an `ERROR` line.
+<details>
+<summary><b>Translation errors / API errors</b></summary>
 
-**Still stuck?**
-- Check `countertranslate.log` in the installation folder (next to `CounterTranslate.exe`) — it records the startup configuration, detected chat lines, and API errors. Please attach it when reporting a bug.
+- Check that the API key is correct and matches the API URL (see [API key](#api-key)).
+- With your own OpenAI key: make sure the account has credit.
+- With a custom endpoint: make sure the model name is what the server expects.
+</details>
+
+<details>
+<summary><b>The app started with default settings / my settings are gone</b></summary>
+
+If `config.json` can't be read (usually a manual edit with a JSON syntax error), it is moved aside to `config.json.bak` instead of being overwritten, and the app starts with defaults. Your old values are still in that file; `countertranslate.log` records the reason as an `ERROR` line.
+</details>
+
+<details>
+<summary><b>Still stuck?</b></summary>
+
+`countertranslate.log` in the installation folder records the startup configuration, detected chat lines and API errors. Please attach it when [opening an issue](https://github.com/Crankerer/CounterTranslate/issues).
+</details>
 
 ---
 
-## Running from Source
+## Development
 
-Windows with Python 3.10+ is required:
+Requires Windows and Python 3.10+.
 
-```
+```bash
 git clone https://github.com/Crankerer/CounterTranslate.git
 cd CounterTranslate
 pip install -r requirements.txt
 python -m app.main
 ```
+
+- **Test without CS2:** `test/replay.py` replays a recorded `console.log` into `test/live.log` in real time — point `log_path` at it and run the script in a second terminal.
+- **Build the EXE:** `build.bat` (needs `nuitka` and `Pillow`) produces `dist/CounterTranslate/`.
+- **Releases:** pushing a `v*` tag builds and publishes a release on GitHub Actions; the release notes are generated from the conventional-commit messages since the previous tag.
+- **Architecture:** [CLAUDE.md](CLAUDE.md) describes every module, the threading rules and the config keys.
 
 ---
 
