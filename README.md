@@ -41,7 +41,7 @@ It reads the `console.log` that CS2 writes itself. It never attaches to the game
    ```
 2. **Download** the latest `CounterTranslate-windows-x64.zip` from the [Releases page](https://github.com/Crankerer/CounterTranslate/releases), extract it and run `CounterTranslate.exe`.
 3. **Point it at CS2.** On first launch, pick your `Counter-Strike Global Offensive` folder — the path to `console.log` is filled in for you.
-4. **Add your key.** Click ⛭ in the overlay's top bar and paste your CounterTranslate key (`ct-…`) into **API key**. Using your own OpenAI key instead? See [API key](#api-key).
+4. **Add your key.** Click ⛭ in the overlay's top bar and paste your CounterTranslate key (`ct-…`) into **API key**. Using your own OpenAI key or a local model in LM Studio instead? See [API key](#api-key).
 5. **Play.** Translations appear in the overlay as soon as someone writes in chat.
 
 > [!NOTE]
@@ -51,14 +51,18 @@ It reads the `console.log` that CS2 writes itself. It never attaches to the game
 
 **By default, translations go through the CounterTranslate proxy.** Leave **API URL** empty and enter your CounterTranslate key (`ct-…`) as the **API key** — that's all. The [status dot](#status-dot) shows whether the proxy is reachable and how many days your key has left.
 
-**Prefer your own provider?** Enter its URL in **API URL**, and the **API key** field then takes that provider's key instead:
+**Prefer your own provider, or hosting it yourself?** Enter the provider's URL in **API URL**. The **API key** field then takes the key you get from that provider:
 
-| Provider | API URL | API key |
-|----------|---------|---------|
-| OpenAI | `https://api.openai.com/v1/chat/completions` | your own `sk-…` key from [platform.openai.com](https://platform.openai.com/api-keys) |
-| Any other OpenAI-compatible server (e.g. a local model in LM Studio) | that server's chat-completions URL | whatever the server expects |
+| Provider | API URL | API key | Model |
+|----------|---------|---------|-------|
+| [OpenAI](https://platform.openai.com/api-keys) | `https://api.openai.com/v1/chat/completions` | create one under **API keys** on platform.openai.com (`sk-…`) | e.g. `gpt-5-nano` |
+| [LM Studio](https://lmstudio.ai) (self-hosted, free) | `http://localhost:1234/v1/chat/completions` | not needed, but the field must not be empty — enter any text, e.g. `lm-studio` | the model loaded in LM Studio |
+| Any other OpenAI-compatible service | its chat-completions URL | from that provider | as the provider documents it |
 
-With a custom API URL, a **Model** field appears so you can choose the model, and the status dot turns blue (the proxy is no longer used, so it isn't checked).
+With a custom API URL, a **Model** field appears, and the status dot turns blue (the proxy is no longer used, so it isn't checked).
+
+> [!TIP]
+> **LM Studio:** load a model, open the **Developer** tab and start the local server (port 1234 by default). Larger instruction-tuned models translate noticeably better than very small ones.
 
 ---
 
