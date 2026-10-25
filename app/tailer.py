@@ -17,9 +17,10 @@ def _parse_lang_prefix(text: str) -> tuple[str, str]:
     return "", text
 
 
-# Trailing bracketed tokens like "[DEAD]"/"[SPEC]" (any language) appended
-# to the player name by CS2 when the player is dead or spectating.
-_NAME_SUFFIX_RE = re.compile(r'(?:\s*\[[^\[\]]*\])+\s*$')
+# Suffixes CS2 appends to the player name: bracketed tokens like
+# "[DEAD]"/"[SPEC]" (any language) when dead or spectating, and in team chat
+# the player's location after a small commercial at, e.g. "﹫AT-Startzone".
+_NAME_SUFFIX_RE = re.compile(r'(?:\s*﹫[^﹫\[\]]*)?(?:\s*\[[^\[\]]*\])*\s*$')
 
 
 _ECHO_STRIP_RE = re.compile(r'[\W_]+')
