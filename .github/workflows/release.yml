@@ -14,6 +14,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history + tags, needed for the release notes
 
       - uses: actions/setup-python@v5
         with:
@@ -39,7 +41,36 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist\CounterTranslate -DestinationPath CounterTranslate-windows-x64.zip
 
+      # GitHub's --generate-notes only lists merged PRs, and this repo commits
+      # straight to main, so build the notes from conventional commit subjects
+      # since the previous tag instead. chore/docs/refactor are left out.
+      - name: Generate release notes
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          $prev = git describe --tags --abbrev=0 --match 'v*' "$env:TAG^" 2>$null
+          $range = if ($prev) { "$prev..$env:TAG" } else { $env:TAG }
+          $sections = [ordered]@{ feat = 'Features'; fix = 'Fixes'; perf = 'Performance' }
+          $groups = @{}
+          foreach ($line in git log --no-merges --format='%h %s' $range) {
+            if ($line -match '^(\w+) (\w+)(?:\(([^)]+)\))?!?: (.+)$' -and $sections.Contains($Matches[2])) {
+              $entry = "- $($Matches[4])"
+              if ($Matches[3]) { $entry += " ($($Matches[3]))" }
+              $groups[$Matches[2]] += @("$entry $($Matches[1])")
+            }
+          }
+          $notes = @()
+          foreach ($type in $sections.Keys) {
+            if ($groups[$type]) { $notes += "## $($sections[$type])"; $notes += ''; $notes += $groups[$type]; $notes += '' }
+          }
+          if (-not $notes) { $notes += 'Maintenance release.', '' }
+          if ($prev) { $notes += "**Full Changelog**: https://github.com/$env:REPO/compare/$prev...$env:TAG" }
+          $notes | Out-File -Encoding utf8 release-notes.md
+          Get-Content release-notes.md
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create ${{ github.ref_name }} CounterTranslate-windows-x64.zip --generate-notes --prerelease
+        run: gh release create ${{ github.ref_name }} CounterTranslate-windows-x64.zip --notes-file release-notes.md --prerelease
