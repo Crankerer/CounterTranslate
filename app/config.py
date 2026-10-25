@@ -4,7 +4,12 @@ from datetime import date
 from . import log_setup as _log_setup
 
 DEFAULT_API_URL = "https://crimson-dog-44043.zap.cloud/v1/chat/completions"
-DEFAULT_MODEL = "gpt-5-nano"
+# Run without reasoning (llm.py sends reasoning_effort "none"): gpt-5-nano
+# even at minimal reasoning echoed messages untranslated, mistranslated CS2
+# slang and leaked its reasoning into the output. gpt-5.6-terra got every
+# test case right at ~1.0-1.3 s and, unlike the gpt-4.1/4o minis, is not
+# scheduled for shutdown. Check _RETIRED_MODELS before picking a new one.
+DEFAULT_MODEL = "gpt-5.6-terra"
 
 # OpenAI shutdown dates (developers.openai.com/api/docs/deprecations). From
 # its date on, a config still naming one of these is moved to DEFAULT_MODEL
@@ -171,7 +176,12 @@ def load_config(path: str, write_back: bool = True) -> dict:
             changed = True
 
     # 5) Replace a retired model
-    if is_retired(cfg.get("gpt_model")):
+    #    The proxy's model isn't user-selectable (the settings hide the field
+    #    when no custom URL is set), so keep proxy configs on DEFAULT_MODEL —
+    #    this is also how a default-model change reaches existing installs.
+    model = (cfg.get("gpt_model") or "").strip()
+    proxy = not (cfg.get("gpt_api") or "").strip()
+    if is_retired(model) or (proxy and model != DEFAULT_MODEL):
         cfg["gpt_model"] = DEFAULT_MODEL
         changed = True
 
