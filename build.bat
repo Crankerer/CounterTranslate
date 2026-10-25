@@ -37,8 +37,8 @@ echo WIN_VERSION     = %WIN_VERSION%
 :: Write version module (imported by app at runtime)
 echo CURRENT_VERSION = "%CURRENT_VERSION%" > app\_build_version.py
 
-:: Convert icon.png → icon.ico
-python -c "from PIL import Image; img = Image.open('app/icon.png'); img.save('app/icon.ico')"
+:: Convert icon.png (square) → icon.ico with every size Windows picks from (16-256 px)
+python -c "from PIL import Image; img = Image.open('app/icon.png'); img.save('app/icon.ico', sizes=[(s, s) for s in (16, 20, 24, 32, 40, 48, 64, 96, 128, 256)])"
 if %errorlevel% neq 0 (
     echo Icon conversion failed! Make sure Pillow is installed.
     if not defined CI pause
