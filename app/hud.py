@@ -32,7 +32,6 @@ class TkHud:
         self.on_settings = on_settings
         self.on_font_change = on_font_change
         self.on_alpha_change = on_alpha_change
-        self._line_count = 0
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
         self._font = font
         self._font_save_job = None
@@ -525,10 +524,15 @@ class TkHud:
 
     # ── text management ──────────────────────────────────────────────────────
 
+    _MAX_LINES = 2000
+    _TRIM_TO = 1800
+
     def _trim_if_needed(self):
-        if self._line_count > 2000:
-            self.text.delete('1.0', '201.0')
-            self._line_count -= 200
+        # Counted from the widget itself: payloads can contain embedded
+        # newlines, so a manual per-insert counter drifts.
+        lines = int(self.text.index("end-1c").split(".")[0])
+        if lines > self._MAX_LINES:
+            self.text.delete("1.0", f"{lines - self._TRIM_TO}.0")
 
     def _poll(self):
         # Every exit path must re-arm the timer: an unhandled error here used to
@@ -562,7 +566,6 @@ class TkHud:
     def _append_line(self, line: str, tag="meta"):
         self.text.configure(state="normal")
         self.text.insert("end", line.rstrip() + "\n", (tag,))
-        self._line_count += 1
         self._trim_if_needed()
         if not self._compact:
             self.text.see("end")
@@ -579,14 +582,12 @@ class TkHud:
         self.text.insert("end", f"[{scope}] ", ("scope",))
         self.text.insert("end", name + ": ", ("name",))
         self.text.insert("end", msg + "\n", ("msg",))
-        self._line_count += 1
         self._trim_if_needed()
         if orig:
             self.text.insert("end", "  ↳ ", ("meta",))
             if lang:
                 self.text.insert("end", f"[{lang}] ", ("lang",))
             self.text.insert("end", orig + "\n", ("meta",))
-            self._line_count += 1
             self._trim_if_needed()
         if not self._compact:
             self.text.see("end")
