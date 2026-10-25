@@ -55,7 +55,7 @@ It reads the `console.log` that CS2 writes itself. It never attaches to the game
 
 | Provider | API URL | API key | Model |
 |----------|---------|---------|-------|
-| [OpenAI](https://platform.openai.com/api-keys) | `https://api.openai.com/v1/chat/completions` | create one under **API keys** on platform.openai.com (`sk-…`) | e.g. `gpt-5-nano` |
+| [OpenAI](https://platform.openai.com/api-keys) | `https://api.openai.com/v1/chat/completions` | create one under **API keys** on platform.openai.com (`sk-…`) | e.g. `gpt-5.6-terra` |
 | [LM Studio](https://lmstudio.ai) (self-hosted, free) | `http://localhost:1234/v1/chat/completions` | not needed, but the field must not be empty — enter any text, e.g. `lm-studio` | the model loaded in LM Studio |
 | Any other OpenAI-compatible service | its chat-completions URL | from that provider | as the provider documents it |
 
@@ -143,7 +143,7 @@ On startup the app checks GitHub for a newer release and asks before downloading
 | **Always on top** | Keep the overlay above other windows |
 | **API URL** | Empty = CounterTranslate proxy (default); otherwise your own OpenAI-compatible chat-completions URL |
 | **Model** | Only shown with a custom API URL |
-| **Temperature** | Lower = more literal translations (ignored by reasoning models such as `gpt-5-nano`) |
+| **Temperature** | Lower = more literal translations (not sent to GPT-5/GPT-6 or o-series models, which don't support it — including the default model) |
 | **API key** | Your `ct-…` key for the proxy, or your own provider's key with a custom API URL. Masked; click the eye icon to reveal it. Leaving it empty keeps the stored key |
 | **console.log path** | Location of the CS2 log file |
 | **Poll interval (ms)** | How often the log file is checked for new lines |
