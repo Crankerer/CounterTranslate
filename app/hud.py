@@ -118,6 +118,13 @@ class TkHud:
         close_btn.bind("<Leave>", lambda e: close_btn.config(fg="#ff6666"))
         close_btn.bind("<Button-1>", lambda e: self.root.destroy())
 
+        min_btn = tk.Label(topbar, text="−", fg="#aaaaaa", bg="black",
+                           font=("Consolas", 12, "bold"), cursor="hand2")
+        min_btn.pack(side="right", padx=4, pady=2)
+        min_btn.bind("<Enter>", lambda e: min_btn.config(fg="#ffffff"))
+        min_btn.bind("<Leave>", lambda e: min_btn.config(fg="#aaaaaa"))
+        min_btn.bind("<Button-1>", self._minimize)
+
         settings_btn = tk.Label(topbar, text="⛭", fg="#7adfff", bg="black",
                                 font=("Consolas", 12, "bold"), cursor="hand2")
         settings_btn.pack(side="right", padx=4, pady=2)
@@ -182,6 +189,13 @@ class TkHud:
         _cc.bind("<Enter>", lambda e: _cc.config(fg="#ffaaaa"))
         _cc.bind("<Leave>", lambda e: _cc.config(fg="#ff6666"))
         _cc.bind("<Button-1>", lambda e: self.root.destroy())
+
+        _cm = tk.Label(self._compact_frame, text="−", fg="#aaaaaa", bg="black",
+                       font=("Consolas", 12, "bold"), cursor="hand2")
+        _cm.pack(side="right", padx=4)
+        _cm.bind("<Enter>", lambda e: _cm.config(fg="#ffffff"))
+        _cm.bind("<Leave>", lambda e: _cm.config(fg="#aaaaaa"))
+        _cm.bind("<Button-1>", self._minimize)
 
         _cs = tk.Label(self._compact_frame, text="⛭", fg="#7adfff", bg="black",
                        font=("Consolas", 12, "bold"), cursor="hand2")
@@ -477,6 +491,27 @@ class TkHud:
         self.root.attributes("-alpha", new_alpha)
         if self.on_alpha_change:
             self.on_alpha_change(new_alpha)
+
+    def _minimize(self, event=None):
+        """Minimize to the taskbar. Tk's iconify() refuses override-redirect
+        windows, so on Windows minimize the real frame via ShowWindow; the
+        taskbar button (WS_EX_APPWINDOW, see _show_in_taskbar) restores it."""
+        if os.name == "nt":
+            try:
+                import ctypes
+                SW_MINIMIZE = 6
+                hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+                if not hwnd:
+                    hwnd = self.root.winfo_id()
+                ctypes.windll.user32.ShowWindow(hwnd, SW_MINIMIZE)
+                return "break"
+            except Exception:
+                pass
+        try:
+            self.root.iconify()
+        except tk.TclError:
+            pass
+        return "break"  # don't start a window drag
 
     def _toggle_visible(self, *_):
         self.visible = not self.visible
