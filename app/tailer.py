@@ -22,6 +22,19 @@ def _parse_lang_prefix(text: str) -> tuple[str, str]:
 _NAME_SUFFIX_RE = re.compile(r'(?:\s*\[[^\[\]]*\])+\s*$')
 
 
+_ECHO_STRIP_RE = re.compile(r'[\W_]+')
+
+
+def is_echo(orig: str, translated: str) -> bool:
+    """True if the 'translation' is just the original again (ignoring case,
+    spacing and punctuation). Small models sometimes echo messages they
+    can't or needn't translate — "b", "eco?", "GG" — instead of returning
+    nothing; showing those adds noise without information."""
+    a = _ECHO_STRIP_RE.sub("", orig).casefold()
+    b = _ECHO_STRIP_RE.sub("", translated).casefold()
+    return a == b
+
+
 def ignore_targets(ignore_names: list[str]) -> frozenset[str]:
     """Normalize ignore_names once per config load for should_ignore."""
     return frozenset(normalize(x).casefold() for x in ignore_names)
@@ -189,6 +202,11 @@ def start_tail_thread(
                             if lang and lang in skip_set:
                                 _log_setup.get().debug(
                                     f"[skipped_lang] [{lang}] {name}: {orig}"
+                                )
+                                return
+                            if is_echo(orig, msg_clean):
+                                _log_setup.get().debug(
+                                    f"[skipped_echo] [{lang}] {name}: {orig}"
                                 )
                                 return
                             _log_setup.get().debug(
