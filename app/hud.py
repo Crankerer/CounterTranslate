@@ -35,6 +35,7 @@ class TkHud:
         self._line_count = 0
         self._resize = {"x": 0, "y": 0, "w": 0, "h": 0}
         self._font = font
+        self._font_save_job = None
         self._saved_geometry = geometry
         self._compact = False
         self._ticker_active = False
@@ -490,9 +491,17 @@ class TkHud:
         size = max(7, min(size, 28))
         self._font = f"{family} {size}"
         self.text.configure(font=self._font)
+        # Debounced: every wheel notch would otherwise be an fsync'd config write.
+        if self._font_save_job:
+            self.root.after_cancel(self._font_save_job)
+        self._font_save_job = self.root.after(500, self._save_font)
+        return "break"
+
+    def _save_font(self):
+        self._font_save_job = None
         if self.on_font_change:
             self.on_font_change(self._font)
-        return "break"
+
 
     # ── text management ──────────────────────────────────────────────────────
 
