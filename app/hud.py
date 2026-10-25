@@ -39,6 +39,7 @@ class TkHud:
         self._saved_geometry = geometry
         self._compact = False
         self._ticker_active = False
+        self._ticker_job = None
         self._ticker_px = max(1, ticker_speed)
         self._ticker_last_t = 0.0
         self._ticker_accum = 0.0
@@ -302,9 +303,12 @@ class TkHud:
             self.root.geometry(f"{w}x{self._COMPACT_H}{pos}")
             self.root.update_idletasks()
             self._round_corners()
-            self.root.after(self._TICKER_MS, self._ticker_tick)
+            self._ticker_start()
         else:
             self._ticker_active = False
+            if self._ticker_job:
+                self.root.after_cancel(self._ticker_job)
+                self._ticker_job = None
             self._compact_frame.pack_forget()
             self._ticker_canvas.delete("all")
             self._normal_frame.pack(fill="both", expand=True)
@@ -384,10 +388,22 @@ class TkHud:
             self._tooltip_win.destroy()
             self._tooltip_win = None
 
-    def _ticker_tick(self):
-        if not self._ticker_active:
+    def _ticker_start(self):
+        """(Re)start the ticker loop if it is idle and there is work to animate."""
+        if self._ticker_job or not (self._ticker_active and self.visible):
             return
+        self._ticker_last_t = time.monotonic()  # no jump after an idle pause
+        self._ticker_job = self.root.after(self._TICKER_MS, self._ticker_tick)
+
+    def _ticker_tick(self):
+        # The loop only runs while there is something to scroll and the HUD is
+        # visible; _ticker_add / _toggle_visible restart it. An idle 60 fps
+        # loop would otherwise burn CPU next to the game for nothing.
+        self._ticker_job = None
+        keep_running = False
         try:
+            if not (self._ticker_active and self.visible):
+                return
             now = time.monotonic()
             elapsed = now - self._ticker_last_t
             self._ticker_last_t = now
@@ -404,14 +420,16 @@ class TkHud:
                             self._ticker_canvas.delete(item)
                     except Exception:
                         pass
+            keep_running = bool(self._ticker_canvas.find_withtag("ticker"))
         except Exception:
             _log_setup.get().exception("[hud] ticker frame failed")
+            keep_running = True  # one bad frame must not stop the ticker
         finally:
-            # Re-arm unconditionally so one bad frame can't stop the ticker.
-            try:
-                self.root.after(self._TICKER_MS, self._ticker_tick)
-            except tk.TclError:
-                pass
+            if keep_running:
+                try:
+                    self._ticker_job = self.root.after(self._TICKER_MS, self._ticker_tick)
+                except tk.TclError:
+                    pass
 
     def _ticker_add(self, dt: str, scope: str, name: str, msg: str,
                     orig: str = "", lang: str = ""):
@@ -447,6 +465,7 @@ class TkHud:
         elif orig:
             put(orig + "  →  ", self.COLORS["meta"])
         put(msg, self.COLORS["msg"])
+        self._ticker_start()
 
     # ── window drag ──────────────────────────────────────────────────────────
 
@@ -463,6 +482,7 @@ class TkHud:
     def _toggle_visible(self, *_):
         self.visible = not self.visible
         self.root.withdraw() if not self.visible else self.root.deiconify()
+        self._ticker_start()
 
     def _start_move(self, event):
         self._drag["x"] = event.x_root - self.root.winfo_x()
