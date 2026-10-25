@@ -521,11 +521,13 @@ class TkHud:
         if self.on_font_change:
             self.on_font_change(self._font)
 
-
     # ── text management ──────────────────────────────────────────────────────
 
     _MAX_LINES = 2000
     _TRIM_TO = 1800
+    # Caps the work per 33 ms tick so a burst can't freeze the Tk thread;
+    # the remainder is rendered on the next tick.
+    _MAX_ITEMS_PER_POLL = 50
 
     def _trim_if_needed(self):
         # Counted from the widget itself: payloads can contain embedded
@@ -538,8 +540,10 @@ class TkHud:
         # Every exit path must re-arm the timer: an unhandled error here used to
         # kill the callback chain outright, silently freezing the HUD for the
         # rest of the session. A bad item is logged and dropped instead.
+        wrote_text = False
         try:
-            while True:
+            self.text.configure(state="normal")
+            for _ in range(self._MAX_ITEMS_PER_POLL):
                 try:
                     typ, payload = self.queue.get_nowait()
                 except Empty:
@@ -547,51 +551,53 @@ class TkHud:
                 try:
                     if typ == "structured":
                         self._append_struct(**payload)
+                        wrote_text = True
                     elif typ == "line":
                         self._append_line(payload)
+                        wrote_text = True
                     elif typ == "error":
                         self._append_line(payload, tag="err")
+                        wrote_text = True
                     elif typ == "status":
                         self._apply_status(**payload)
                 except Exception:
                     _log_setup.get().exception("[hud] failed to render %s item", typ)
                 finally:
                     self.queue.task_done()
+            # Trim and scroll once per tick instead of once per item.
+            if wrote_text:
+                self._trim_if_needed()
+                if not self._compact:
+                    self.text.see("end")
+        except Exception:
+            _log_setup.get().exception("[hud] poll failed")
         finally:
             try:
+                self.text.configure(state="disabled")
                 self.root.after(33, self._poll)
             except tk.TclError:
                 pass  # root destroyed — shutting down
 
     def _append_line(self, line: str, tag="meta"):
-        self.text.configure(state="normal")
+        """Caller (_poll) sets the text widget to state=normal."""
         self.text.insert("end", line.rstrip() + "\n", (tag,))
-        self._trim_if_needed()
-        if not self._compact:
-            self.text.see("end")
-        self.text.configure(state="disabled")
 
     def _append_struct(self, dt: str, scope: str, name: str, msg: str,
                        orig: str = "", lang: str = ""):
+        """Caller (_poll) sets the text widget to state=normal."""
         if self._compact:
             self._ticker_add(dt, scope, name, msg, orig, lang)
         # Always write to text widget too — it's just hidden in compact mode,
         # so content is fully preserved when switching back to normal mode.
-        self.text.configure(state="normal")
         self.text.insert("end", dt + "  ", ("dt",))
         self.text.insert("end", f"[{scope}] ", ("scope",))
         self.text.insert("end", name + ": ", ("name",))
         self.text.insert("end", msg + "\n", ("msg",))
-        self._trim_if_needed()
         if orig:
             self.text.insert("end", "  ↳ ", ("meta",))
             if lang:
                 self.text.insert("end", f"[{lang}] ", ("lang",))
             self.text.insert("end", orig + "\n", ("meta",))
-            self._trim_if_needed()
-        if not self._compact:
-            self.text.see("end")
-        self.text.configure(state="disabled")
 
     def run(self):
         self.root.mainloop()
