@@ -46,6 +46,15 @@ class TkHud:
         self._status_color: str = ""
         self._status_setting_enabled: bool = show_status_dot
 
+        if os.name == "nt":
+            # Own taskbar identity: without it Windows groups the window under
+            # the host process (python.exe in dev) and shows that icon.
+            try:
+                import ctypes
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Crankerer.CounterTranslate")
+            except Exception:
+                pass
+
         self.root = tk.Tk()
         self.root.title("CS2 Chat HUD")
         self.root.attributes("-topmost", always_on_top)
@@ -61,14 +70,13 @@ class TkHud:
         try:
             if os.path.isfile(_ico):
                 self._ico_path = _ico
-                self.root.iconbitmap(_ico)
             elif os.path.isfile(_png):
                 from PIL import Image, ImageTk
                 _img = Image.open(_png)
                 self._icon_ref = ImageTk.PhotoImage(_img)
-                self.root.iconphoto(True, self._icon_ref)
         except Exception:
             pass
+        self._apply_icon()
 
         if os.name == "nt":
             try:
@@ -267,6 +275,50 @@ class TkHud:
         except Exception:
             pass
 
+    def _apply_icon(self):
+        """Set the window and taskbar icon. Tk thread only."""
+        try:
+            if self._ico_path:
+                self.root.iconbitmap(self._ico_path)
+            elif hasattr(self, "_icon_ref"):
+                self.root.iconphoto(True, self._icon_ref)
+        except Exception:
+            pass
+        if os.name == "nt":
+            self._set_native_icons()
+
+    def _set_native_icons(self):
+        """Hand Windows the icon at the sizes it renders (taskbar, Alt+Tab,
+        title). Tk's iconbitmap leaves the taskbar with a scaled-down small
+        icon, which looks pixelated. Falls back to the icon embedded in the
+        EXE when icon.ico is missing (compiled build)."""
+        try:
+            import ctypes, sys
+            from ctypes import wintypes
+            u, shell32 = ctypes.windll.user32, ctypes.windll.shell32
+            u.LoadImageW.restype = wintypes.HANDLE
+            u.LoadImageW.argtypes = (wintypes.HINSTANCE, wintypes.LPCWSTR, wintypes.UINT,
+                                     ctypes.c_int, ctypes.c_int, wintypes.UINT)
+            u.SendMessageW.argtypes = (wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+            WM_SETICON, ICON_SMALL, ICON_BIG = 0x0080, 0, 1
+            SM_CXICON, SM_CXSMICON = 11, 49
+            IMAGE_ICON, LR_LOADFROMFILE = 1, 0x10
+            hwnd = u.GetParent(self.root.winfo_id()) or self.root.winfo_id()
+            icons = {}
+            if self._ico_path:
+                for which, metric in ((ICON_BIG, SM_CXICON), (ICON_SMALL, SM_CXSMICON)):
+                    size = u.GetSystemMetrics(metric)
+                    icons[which] = u.LoadImageW(None, self._ico_path, IMAGE_ICON, size, size, LR_LOADFROMFILE)
+            elif getattr(sys, "frozen", False) or "__compiled__" in globals():
+                large, small = wintypes.HICON(), wintypes.HICON()
+                if shell32.ExtractIconExW(sys.executable, 0, ctypes.byref(large), ctypes.byref(small), 1):
+                    icons = {ICON_BIG: large.value, ICON_SMALL: small.value}
+            for which, handle in icons.items():
+                if handle:
+                    u.SendMessageW(hwnd, WM_SETICON, which, handle)
+        except Exception:
+            _log_setup.get().exception("[hud] setting the native icon failed")
+
     def _show_in_taskbar(self):
         if os.name != "nt":
             return
@@ -297,13 +349,7 @@ class TkHud:
             # Icon must be re-applied after deiconify — the cycle resets it.
             def _reshow():
                 self.root.deiconify()
-                try:
-                    if self._ico_path:
-                        self.root.iconbitmap(self._ico_path)
-                    elif hasattr(self, "_icon_ref"):
-                        self.root.iconphoto(True, self._icon_ref)
-                except Exception:
-                    pass
+                self._apply_icon()
             self.root.withdraw()
             self.root.after(50, _reshow)
         except Exception:

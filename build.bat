@@ -61,6 +61,7 @@ python -m nuitka ^
  --output-dir=%NUITKA_BUILD_DIR% ^
  --enable-plugin=tk-inter ^
  --windows-icon-from-ico=app\icon.ico ^
+ --include-data-files=app\icon.ico=app\icon.ico ^
  --windows-company-name="Crankerer" ^
  --windows-product-name="CounterTranslate" ^
  --windows-file-version=%WIN_VERSION% ^
