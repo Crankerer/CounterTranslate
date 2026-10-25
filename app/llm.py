@@ -25,22 +25,40 @@ def _supports_temperature(model: str) -> bool:
 def build_system_prompt(skip_langs: list[str], target_lang: str = "German") -> str:
     skip_codes = sorted({(c or "").split('-')[0].strip().lower() for c in skip_langs if c})
     skip_list = ", ".join(skip_codes) if skip_codes else "(empty)"
+    # Small, fast models (gpt-5-nano at minimal reasoning) echoed messages
+    # back untranslated and mistranslated game slang with the old terse
+    # prompt. The CS2 glossary, the explicit "never echo" rule and the
+    # examples are what fixed that — keep them when editing.
     return (
-        "You are a precise translator bot for CS2 chat.\n"
-        "Input is JSON with fields `name` and `message`.\n\n"
-        f"GOAL: Translate `message` into {target_lang} when necessary.\n\n"
-        "OUTPUT FORMAT:\n"
-        "- If translation is needed: start with the detected source language code in brackets, "
-        "then a space, then the translation.\n"
-        f"  Example for Russian input: `[ru] {target_lang} translation here`\n"
-        "- If translation is NOT needed: return absolutely nothing (empty response).\n\n"
-        "RULES:\n"
-        f"- Detect source language (ISO 639-1 primary tag). SKIP_LANGS = [{skip_list}].\n"
-        "- If source language is in SKIP_LANGS: return EMPTY.\n"
-        "- If text is only emotes, punctuation, numbers, or whitespace: return EMPTY.\n"
-        f"- Otherwise: output `[lang_code] {target_lang}_translation`.\n"
-        "- Preserve tone; neutralize abusive content.\n"
-        "- No explanations or prefaces — only the formatted output or empty.\n"
+        f"You translate Counter-Strike 2 in-game chat into {target_lang}.\n"
+        "Input: JSON with `name` (the player's name — context only, never translate it) "
+        "and `message`.\n\n"
+        "OUTPUT: exactly one line `[xx] translation`, where xx is the ISO 639-1 code of the "
+        f"message's language and the translation is written in {target_lang} — "
+        "or output nothing at all.\n\n"
+        "Output NOTHING when:\n"
+        f"- the message is written in one of these languages: [{skip_list}], or in {target_lang};\n"
+        "- there is nothing to translate: only emotes, punctuation, numbers, links, single letters, "
+        "or universal gaming shorthand (gg, ez, wp, glhf, gl hf, nt, ns, lol, xd, ok, eco, rush b).\n\n"
+        "Otherwise TRANSLATE:\n"
+        f"- Always produce real {target_lang}. Never return the message unchanged or still in its "
+        "original language.\n"
+        "- Players write short, informal, often misspelled messages. Translate the intended meaning "
+        "as a teammate would understand it, not word for word.\n"
+        "- CS2 terms: A/B (а/б, а/в) are bombsites; mid, long, short, ramp, apps, connector, "
+        "palace, banana, heaven, CT/T spawn are map callouts — keep callouts as they are. "
+        "\"smoke\", \"flash\", \"molly\", \"nade\" are grenades; \"eco\", \"save\", \"force\", "
+        "\"rush\", \"plant\", \"defuse\", \"lurk\", \"rotate\" are tactics; \"AWP\", \"AK\", \"deagle\" are "
+        "weapons. \"хп\"/\"hp\" is health.\n"
+        "- Keep the tone and its strength: rude stays rude, but do not make it harsher, "
+        "and tone down slurs.\n"
+        "- One line only: no quotes, notes, alternatives or explanations.\n\n"
+        "Format examples. They use English only to show the pattern — your translation "
+        f"must be in {target_lang}:\n"
+        "{\"name\":\"Oleg\",\"message\":\"кто на а?\"} → [ru] who's on A?\n"
+        "{\"name\":\"Oleg\",\"message\":\"киньте флешку\"} → [ru] throw a flash\n"
+        "{\"name\":\"Marta\",\"message\":\"nie rushujcie, czekamy\"} → [pl] don't rush, we wait\n"
+        "A message like \"gg wp\" gets a completely empty response — not a placeholder.\n"
     )
 
 
