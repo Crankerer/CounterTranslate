@@ -8,13 +8,18 @@ from . import log_setup as _log_setup
 from .config import DEFAULT_API_URL
 
 _NO_TEMP_MODELS = frozenset({"o1", "o1-mini", "o1-preview", "o3", "o3-mini", "o4-mini"})
-# o-series and GPT-5 reasoning models reject any non-default temperature.
-_O_SERIES_RE = re.compile(r'^(o\d|gpt-5)', re.IGNORECASE)
+# o-series and all GPT-5+ models (gpt-5*, gpt-6*, …) reject any non-default
+# temperature — sending one is a 400 on every request.
+_O_SERIES_RE = re.compile(r'^(o\d|gpt-([5-9]|\d{2,}))', re.IGNORECASE)
 
 
 # Original GPT-5 family (not gpt-5.x): reasons by default, which adds seconds
 # of latency per chat line. "minimal" keeps it near non-reasoning speed.
 _MINIMAL_REASONING_RE = re.compile(r'^gpt-5(-mini|-nano)?(-\d{4}-\d{2}-\d{2})?$', re.IGNORECASE)
+
+# gpt-5.x and gpt-6+ only accept "none" (they reject "minimal"); without it
+# some (e.g. gpt-6-luna) reason by default. "none" turns reasoning off.
+_NO_REASONING_RE = re.compile(r'^gpt-(5\.\d+|[6-9]|\d{2,})', re.IGNORECASE)
 
 
 def _supports_temperature(model: str) -> bool:
@@ -87,6 +92,8 @@ def call_chatgpt(
         payload["temperature"] = float(temperature)
     if _MINIMAL_REASONING_RE.match(model.strip()):
         payload["reasoning_effort"] = "minimal"
+    elif _NO_REASONING_RE.match(model.strip()):
+        payload["reasoning_effort"] = "none"
 
     headers = {"Authorization": f"Bearer {api_key}"}
     try:
