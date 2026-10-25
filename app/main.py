@@ -116,7 +116,6 @@ def main():
     print(t("hud.gpt_api", api=cfg.get("gpt_api")))
     print(t("hud.gpt_model", model=cfg.get("gpt_model")))
     print(t("hud.api_key", state=t("hud.key_set") if cfg.get("open_ai_api_key") else t("hud.key_empty")))
-    print(t("hud.temp", temp=cfg.get("temperature")))
     print(t("hud.target_lang", lang=cfg.get("target_lang", "German")))
     print(t("hud.no_translate", langs=', '.join(cfg.get('no_translate_langs', [])) or t("hud.none")))
     print(t("hud.poll", ms=poll_ms))
@@ -127,7 +126,7 @@ def main():
     _log.info(
         f"config: log={log_path} | model={cfg.get('gpt_model')} "
         f"| api={cfg.get('gpt_api')} | target_lang={cfg.get('target_lang')} "
-        f"| no_translate={cfg.get('no_translate_langs')} | temp={cfg.get('temperature')}"
+        f"| no_translate={cfg.get('no_translate_langs')}"
     )
 
     # Start HUD + tailer

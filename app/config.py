@@ -68,6 +68,10 @@ _READ_RETRY_DELAY = 0.05
 _REPLACE_RETRIES = 6
 _REPLACE_RETRY_DELAY = 0.05
 
+# Keys that no longer mean anything; load_config drops them from old files.
+# temperature: GPT-5+ models only accept the default, so it was never sent.
+_REMOVED_KEYS = ("temperature",)
+
 DEFAULTS = {
     "log_path": "",
     "ignore_names": [],
@@ -76,7 +80,6 @@ DEFAULTS = {
     "llm_model": "local-model",
     "gpt_api": "",
     "gpt_model": DEFAULT_MODEL,
-    "temperature": 0.2,
     "no_translate_langs": ["de"],
     "target_lang": "German",
     "open_ai_api_key": os.environ.get("OPENAI_API_KEY", ""),
@@ -187,7 +190,13 @@ def load_config(path: str, write_back: bool = True) -> dict:
         cfg["gpt_model"] = DEFAULT_MODEL
         changed = True
 
-    # 6) Write back the migrated config if anything changed
+    # 6) Drop keys that are no longer used
+    for key in _REMOVED_KEYS:
+        if key in cfg:
+            del cfg[key]
+            changed = True
+
+    # 7) Write back the migrated config if anything changed
     if changed and write_back:
         try:
             save_config(path, cfg)

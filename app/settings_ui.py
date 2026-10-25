@@ -104,9 +104,6 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
                 raw = widget.get().strip()
                 if key in ("no_translate_langs", "ignore_names"):
                     out[key] = [x.strip() for x in raw.split(",") if x.strip()]
-                elif key == "temperature":
-                    try: out[key] = float(raw)
-                    except ValueError: pass
                 elif key in ("poll_interval_ms", "ticker_speed"):
                     try: out[key] = int(raw)
                     except ValueError: pass
@@ -500,7 +497,6 @@ def open_settings(parent_root, cfg: dict, config_path: str, on_save=None, base_d
     _api_url_var.trace_add("write", _update_model_visibility)
     _update_model_visibility()
 
-    field("temperature",         t("settings.field.temperature"),   width=10)
     field_key("open_ai_api_key", t("settings.field.api_key"))
 
     section(t("settings.section.log"))

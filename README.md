@@ -143,7 +143,6 @@ On startup the app checks GitHub for a newer release and asks before downloading
 | **Always on top** | Keep the overlay above other windows |
 | **API URL** | Empty = CounterTranslate proxy (default); otherwise your own OpenAI-compatible chat-completions URL |
 | **Model** | Only shown with a custom API URL |
-| **Temperature** | Lower = more literal translations (not sent to GPT-5/GPT-6 or o-series models, which don't support it — including the default model) |
 | **API key** | Your `ct-…` key for the proxy, or your own provider's key with a custom API URL. Masked; click the eye icon to reveal it. Leaving it empty keeps the stored key |
 | **console.log path** | Location of the CS2 log file |
 | **Poll interval (ms)** | How often the log file is checked for new lines |

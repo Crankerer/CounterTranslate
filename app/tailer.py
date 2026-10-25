@@ -63,7 +63,7 @@ def should_ignore(name: str, targets: frozenset[str]) -> bool:
 _MAX_QUEUE_AGE_S = 20.0
 
 _RELOAD_KEYS = frozenset({
-    "gpt_api", "gpt_model", "temperature",
+    "gpt_api", "gpt_model",
     "no_translate_langs", "target_lang",
     "log_path", "poll_interval_ms", "ignore_names",
     "open_ai_api_key",
@@ -179,7 +179,6 @@ def start_tail_thread(
                                 full_text = call_chatgpt(
                                     snap["gpt_api"], snap["gpt_model"],
                                     snap.get("open_ai_api_key", ""),
-                                    float(snap.get("temperature", 0.2)),
                                     name, orig, prompt,
                                 )
                             except Exception as e:
