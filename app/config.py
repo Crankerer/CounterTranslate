@@ -4,12 +4,14 @@ from datetime import date
 from . import log_setup as _log_setup
 
 DEFAULT_API_URL = "https://crimson-dog-44043.zap.cloud/v1/chat/completions"
-# Run without reasoning (llm.py sends reasoning_effort "none"): gpt-5-nano
-# even at minimal reasoning echoed messages untranslated, mistranslated CS2
-# slang and leaked its reasoning into the output. gpt-5.6-terra got every
-# test case right at ~1.0-1.3 s and, unlike the gpt-4.1/4o minis, is not
-# scheduled for shutdown. Check _RETIRED_MODELS before picking a new one.
-DEFAULT_MODEL = "gpt-5.6-terra"
+# Run without reasoning (llm.py sends reasoning_effort "none") and, via the
+# proxy, on the Fast tier. Measured on 2026-10-25 against the proxy:
+#   gpt-6-luna + Fast  0.95 s  99 %  $0.11 per 1000 messages  <- default
+#   gpt-4.1-mini       0.87 s  97 %  $0.21  (shut down 2027-01-14)
+#   gpt-5.6-terra      1.10 s 100 %  $1.09  (same quality, 10x the price)
+#   gpt-5-nano         1.14 s  87 %  $0.03  (echoed/mistranslated; 2026-12-11)
+# Check _RETIRED_MODELS and the price per message before picking a new one.
+DEFAULT_MODEL = "gpt-6-luna"
 
 # OpenAI shutdown dates (developers.openai.com/api/docs/deprecations). From
 # its date on, a config still naming one of these is moved to DEFAULT_MODEL

@@ -55,7 +55,7 @@ It reads the `console.log` that CS2 writes itself. It never attaches to the game
 
 | Provider | API URL | API key | Model |
 |----------|---------|---------|-------|
-| [OpenAI](https://platform.openai.com/api-keys) | `https://api.openai.com/v1/chat/completions` | create one under **API keys** on platform.openai.com (`sk-…`) | e.g. `gpt-5.6-terra` |
+| [OpenAI](https://platform.openai.com/api-keys) | `https://api.openai.com/v1/chat/completions` | create one under **API keys** on platform.openai.com (`sk-…`) | e.g. `gpt-6-luna` |
 | [LM Studio](https://lmstudio.ai) (self-hosted, free) | `http://localhost:1234/v1/chat/completions` | not needed, but the field must not be empty — enter any text, e.g. `lm-studio` | the model loaded in LM Studio |
 | Any other OpenAI-compatible service | its chat-completions URL | from that provider | as the provider documents it |
 

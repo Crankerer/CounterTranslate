@@ -94,6 +94,11 @@ def call_chatgpt(
         payload["reasoning_effort"] = "minimal"
     elif _NO_REASONING_RE.match(model.strip()):
         payload["reasoning_effort"] = "none"
+    if api_url == DEFAULT_API_URL:
+        # Fast tier (formerly "priority"): ~0.95 s instead of ~1.33 s per line
+        # for gpt-6-luna, at twice the token price. Proxy only — custom
+        # servers such as LM Studio may reject the unknown field.
+        payload["service_tier"] = "priority"
 
     headers = {"Authorization": f"Bearer {api_key}"}
     try:
