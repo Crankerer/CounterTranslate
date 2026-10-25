@@ -81,7 +81,13 @@ def _backup_unreadable(path: str, err: Exception | None) -> None:
         )
 
 
-def load_config(path: str) -> dict:
+def load_config(path: str, write_back: bool = True) -> dict:
+    """Load config.json, merging defaults and applying migrations.
+
+    write_back=False is for the tailer's hot-reload: it never touches the file
+    (config.json has a single writer, the Tk thread) and raises on an
+    unreadable file so the caller keeps its current config.
+    """
     # 1) Read the file. Retry a parse failure briefly: a truncated read means
     #    another thread was mid-save, not that the config is broken. Only a
     #    file that stays unreadable is treated as corrupt — and then it is
@@ -101,6 +107,8 @@ def load_config(path: str) -> dict:
                 time.sleep(_READ_RETRY_DELAY)
 
     if cfg is None:
+        if not write_back:
+            raise ValueError(f"config unreadable: {last_err}")
         _backup_unreadable(path, last_err)
         cfg = {}
 
@@ -131,7 +139,7 @@ def load_config(path: str) -> dict:
         changed = True
 
     # 6) Write back the migrated config if anything changed
-    if changed:
+    if changed and write_back:
         try:
             save_config(path, cfg)
         except Exception:

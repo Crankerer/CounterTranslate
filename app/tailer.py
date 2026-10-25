@@ -88,7 +88,8 @@ def start_tail_thread(
                     last_config_check = now_check
                     try:
                         from .config import load_config
-                        new_cfg = load_config(config_path)
+                        # Read-only: the Tk thread is the sole config writer.
+                        new_cfg = load_config(config_path, write_back=False)
                         if _translation_cfg(new_cfg) != _translation_cfg(current_cfg):
                             current_cfg = new_cfg
                             current_ignore = current_cfg.get("ignore_names", [])
