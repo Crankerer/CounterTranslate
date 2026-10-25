@@ -149,12 +149,17 @@ def start_tail_thread(
                             snap=snap, prompt=snap_prompt, skip_set=current_skip,
                             submitted=time.monotonic(),
                         ):
-                            waited = time.monotonic() - submitted
-                            if waited > _MAX_QUEUE_AGE_S:
-                                _log_setup.get().debug(
-                                    "[skipped_stale] waited %.1fs — %s: %s",
-                                    waited, name, orig
-                                )
+                            def _stale() -> bool:
+                                waited = time.monotonic() - submitted
+                                if waited > _MAX_QUEUE_AGE_S:
+                                    _log_setup.get().debug(
+                                        "[skipped_stale] waited %.1fs — %s: %s",
+                                        waited, name, orig
+                                    )
+                                    return True
+                                return False
+
+                            if _stale():
                                 return
                             try:
                                 full_text = call_chatgpt(
@@ -171,6 +176,11 @@ def start_tail_thread(
                                 _log_setup.get().debug(
                                     f"[skipped_empty] {name}: {orig}"
                                 )
+                                return
+
+                            # Checked again after the call: a slow or retried
+                            # request can finish long after the message was sent.
+                            if _stale():
                                 return
 
                             lang, msg_clean = _parse_lang_prefix(full_text)
